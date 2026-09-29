@@ -8,6 +8,8 @@
 ![Tesseract](https://img.shields.io/badge/OCR-Tesseract-5A5A5A)
 ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
 
+![Tela de revisão: transcrição editável ao lado do PDF original, com a linha de batidas ímpares destacada](docs/tela-revisao.png)
+
 ---
 
 ## Sobre o projeto
