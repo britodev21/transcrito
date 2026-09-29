@@ -1,4 +1,6 @@
-# Processo
+# Processo de desenvolvimento
+ 
+Como o projeto foi construído: ferramentas, uso de agentes de IA, onde eles erraram, o que escrevi à mão e onde a solução ainda é frágil.
  
 ## Ferramentas
  
@@ -65,7 +67,7 @@
 - Injetei um id que resolve para um PDF real fora de `uploads/`: passou a primeira barreira e a segunda recusou. Sem esse teste, remover a proteção de caminho num refactor futuro não quebraria nenhum teste existente.
 ---
  
-## Cite 3 decisões em que havia mais de uma resposta razoável. Por que escolheu essa?
+## Três decisões com mais de uma resposta razoável
  
 1. Na extração do time-card-01, dois dias vinham repetindo o número da data em vez de omitir na linha de continuação, porque tinham mais batidas e ocupavam duas linhas. A documentação diz um item por linha do documento, mas escolhi juntar as duas linhas num registro só. Separar criaria dois registros com a mesma data e faria o aviso de data não sequencial disparar num dia que não tem problema.
 
@@ -81,11 +83,11 @@
 
 Antes de apresentar para ele, eu não tinha muita certeza do que fazer, mas após apresentar, tive certeza de que a opção 1 se encaixaria melhor, porque é a única que não perde dado e nem mexe no label.
  
-## O que na sua solução quebra primeiro em produção?
+## O que quebra primeiro em produção
  
 - O dicionário `transcricoes` vive em memória, então não persiste entre reinícios. Quando o processa se reinicia, tudo some. E como o deploy foi feito no Render com plano free, a aplicação dorme por inatividade. Então se o usuário fizer upload para extração de um pdf e sair para ir almoçar, nada fica salvo, e o front não sabe voltar a ela porque tambem nao salva nada.
 
-## Onde você não confia no que entregou?
+## Onde ainda não confio na solução
 
 Quatro dos oito arquivos processam, e os outros quatro têm motivo identificado. Três dos quatro falham por layout que o extrator não reconhece; no `time-card-04` o próprio OCR não consegue ler.
 
@@ -99,4 +101,4 @@ Quatro dos oito arquivos processam, e os outros quatro têm motivo identificado.
 
 E no `time-card-04` o próprio diagnóstico do script erra: ele reporta que o texto saiu e o problema é layout, mas os caracteres que ele contou são quase todos os `?` da marcação de incerteza. O marcador conta como caractere e engana o teste de "tem texto útil".
 
-O que me deixa desconfiado é que cada documento novo do desafio trouxe um formato diferente, e cada um precisou de ajuste no extrator. Não tenho como saber se um documento real que chegue depois vai cair num dos formatos que eu trato.
+O que me deixa desconfiado é que cada documento de exemplo trouxe um formato diferente, e cada um precisou de ajuste no extrator. Não tenho como saber se um documento real que chegue depois vai cair num dos formatos que eu trato.

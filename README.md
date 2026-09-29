@@ -1,332 +1,244 @@
-# Desafio Técnico — Quick Filler
+# Transcrito
 
-## Contexto
+**Cartões de ponto e holerites em PDF viram planilhas, e a pessoa revisa tudo antes do download.**
 
-A Quick Filler transcreve documentos trabalhistas em PDF — cartões de ponto e holerites — para planilhas estruturadas. Na prática isso significa lidar com centenas de layouts diferentes, documentos escaneados, OCR imperfeito e a exigência de que **um número errado nunca passe despercebido**.
-
-Este desafio é uma versão reduzida do nosso produto.
-
-## O que você vai construir
-
-Uma aplicação web publicada na internet que faz o caminho completo, para **cartão de ponto** e **holerite**:
-
-```
-enviar PDF  →  processar  →  revisar a transcrição  →  baixar a planilha
-```
-
-Exatamente o fluxo do produto real:
-
-1. **Envio** — o usuário escolhe o PDF e o tipo de documento
-2. **Processamento** — leva tempo; a interface acompanha até terminar
-3. **Revisão** — a transcrição aparece numa tabela editável, ao lado do PDF, com os problemas destacados
-4. **Download** — a planilha sai com os dados já corrigidos
-
-**Um pipeline, dois extratores.** Os dois tipos compartilham envio, processamento, revisão e download — o que muda é a leitura do documento e a forma da planilha. Se você acabar com duas aplicações paralelas, provavelmente errou a divisão.
-
-## Tempo esperado
-
-**Cerca de 14 horas.**
-
-Não é prova de resistência, e não recompensamos volume de código. Se estiver estourando, **corte escopo e escreva em `SOLUCAO.md` o que cortou e por quê**. Decidir o que sacrificar sob prazo é parte do que avaliamos — uma entrega menor e honesta vale mais que uma grande e frágil.
-
-Se for cortar, corte **profundidade de um tipo de documento**, não o ciclo. Preferimos os dois tipos lidos parcialmente com o fluxo inteiro funcionando do que um tipo perfeito sem interface e sem deploy.
-
-## Os documentos
-
-Os PDFs de exemplo estão em `exemplos/`.
-
-**Cartão de ponto** tem uma linha por dia do período e, em cada linha, as batidas do funcionário em pares entrada/saída.
-
-**Holerite** tem uma tabela de verbas (vencimentos e descontos) e, numa seção separada, as bases e totais — Base INSS, Base IR, FGTS, Total Vencimentos, Valor Líquido.
-
-Em nenhum dos dois todos os registros seguem o padrão, e o que fazer com as exceções é parte do desafio — não vamos enumerá-las aqui.
-
-**Parte dos exemplos é escaneada**: imagem pura, sem camada de texto. Extrair só o texto embutido devolve vazio nesses arquivos, então sua solução precisa reconhecer o caso e passar por OCR. A ferramenta é escolha sua — Tesseract, um serviço de nuvem, o que preferir — e a escolha entra no `SOLUCAO.md`. É assim que a maior parte do que recebemos chega.
-
-Duas regras não negociáveis, para os dois tipos:
-
-- **Nunca invente um valor.** Se um caractere não deu para ler, ele vai como `?`. Um valor errado com aparência de certo é o pior resultado possível neste domínio — pior que um campo vazio.
-- **Nunca produza uma data impossível.** `38/07` ou o mês `13` significam erro de leitura, não uma data.
+![Python](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.141-009688?logo=fastapi&logoColor=white)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
+![Tesseract](https://img.shields.io/badge/OCR-Tesseract-5A5A5A)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
 
 ---
 
-# Formato de saída
+## Sobre o projeto
 
-Estes são os formatos **reais** que usamos em produção. São obrigatórios e literais: é por eles que comparamos as entregas de todo mundo pelo mesmo critério, independente da linguagem escolhida.
+O Transcrito lê documentos trabalhistas em PDF, como **cartões de ponto** e **holerites**, e transforma o conteúdo em planilhas estruturadas (`.xlsx`, `.csv` ou `.json`).
 
-## Cartão de ponto
+Na prática esses documentos são difíceis de ler:
 
-```jsonc
-{
-  "pages": [
-    {
-      "page": 1,
-      "days": [
-        {
-          "date_raw": "21/05/2019",
-          "punches": [
-            { "kind": "IN",  "time_raw": "08:25", "time_hhmm": "08:25" },
-            { "kind": "OUT", "time_raw": "18:25", "time_hhmm": "18:25" }
-          ]
-        },
-        { "date_raw": "25/05/2019", "punches": [] }
-      ]
-    }
-  ]
-}
+- cada empresa usa um layout diferente;
+- muitos chegam escaneados ou fotografados, sem texto selecionável;
+- um número lido errado, mas com cara de certo, passa despercebido e vira erro de cálculo lá na frente.
+
+Por isso a aplicação não termina na extração. Ela mostra a transcrição **ao lado do PDF original**, destaca o que precisa de conferência e deixa corrigir antes de gerar a planilha.
+
+O princípio que guia o projeto: **nunca inventar um valor**. Quando um caractere não dá para ler com segurança, ele aparece como `?`. Um campo marcado como duvidoso é conferido na revisão; um valor errado com cara de certo, não.
+
+## Funcionalidades
+
+- **Envio de PDF**, escolhendo o tipo: cartão de ponto ou holerite
+- **Validação do arquivo** pela assinatura binária do PDF, não pela extensão
+- **OCR automático** nas páginas escaneadas, decidido página a página
+- **Incerteza por caractere**: o que o OCR leu com baixa confiança vira `?` (`10:35` → `??:??`)
+- **Acompanhamento do processamento**, com contador de tempo para a tela nunca parecer travada
+- **Tabela editável ao lado do PDF original**, para conferir sem trocar de janela
+- **Avisos calculados a partir dos dados**, cada um com o motivo em texto:
+  - cartão de ponto: número ímpar de batidas, data fora de sequência
+  - holerite: página vazia, competência fora de sequência
+  - os dois: caractere ilegível na linha
+- **Download em `.xlsx`, `.csv` ou `.json`** já com as correções; alterações pendentes são salvas antes do download
+- **Holerite transposto**: a lista vertical de verbas de cada página vira uma matriz, com uma coluna por verba
+- **Limpeza automática** dos arquivos órfãos a cada inicialização
+
+## Como funciona
+
+```
+Enviar o PDF  →  Processar (texto nativo ou OCR)  →  Revisar e corrigir  →  Baixar a planilha
 ```
 
-| Campo | Significado |
+Cartão de ponto e holerite passam pelo **mesmo pipeline**: envio, fila, revisão, edição e download são compartilhados. O que muda entre eles é só o extrator e o formato da planilha.
+
+## Arquitetura
+
+```mermaid
+flowchart TD
+    U["Navegador<br/>React + Vite"] -->|"POST /api/transcricoes<br/>PDF + tipo"| API["FastAPI<br/>valida o tipo e a assinatura do PDF"]
+    API -->|"202 + id"| U
+    API --> BG["Processamento em segundo plano"]
+    BG --> T{"A página tem texto<br/>nativo suficiente?"}
+    T -->|sim| PL["pdfplumber"]
+    T -->|"não"| OCR["Tesseract a 300 DPI<br/>baixa confiança vira ?"]
+    PL --> EX["Extrator do tipo<br/>cartão de ponto ou holerite"]
+    OCR --> EX
+    EX --> MEM[("Transcrições<br/>em memória")]
+    U -.->|"GET a cada 2 s"| MEM
+    U -->|"PUT com as correções"| MEM
+    MEM --> PLAN["Geração da planilha<br/>xlsx, csv, json + avisos"]
+    PLAN -->|"download"| U
+```
+
+- **Um contêiner só.** O React é compilado como estático e servido pelo próprio FastAPI, então interface e API ficam na mesma porta.
+- **Fonte única de texto.** O módulo de OCR entrega aos extratores uma lista de linhas, e eles não sabem se o texto veio da camada nativa do PDF ou do Tesseract.
+- **Processamento fora do request.** O `POST` devolve o id na hora e a extração continua em segundo plano. Processar dentro do request quebraria quando um proxy cortasse a conexão antes do fim.
+- **Sem banco de dados.** As transcrições vivem em memória durante a sessão de revisão. Os PDFs enviados e as planilhas ficam em disco, com nome gerado pelo sistema, e são apagados na inicialização seguinte.
+
+## Tecnologias
+
+| Camada | Tecnologia |
 |---|---|
-| `pages[].page` | Número da página no PDF, começando em 1 |
-| `days[]` | Um item por linha do documento, **na ordem em que aparecem** — não ordene por data |
-| `date_raw` | A data exatamente como está impressa, sem normalizar |
-| `punches[]` | As batidas na ordem do documento; lista vazia quando o dia não tem batida |
-| `kind` | `IN` ou `OUT` |
-| `time_raw` | O horário exatamente como está impresso |
-| `time_hhmm` | O horário normalizado para `HH:MM`, 24 horas |
+| Backend | Python 3.13, FastAPI, Uvicorn, Pydantic |
+| Leitura de PDF | pdfplumber (pdfminer.six, pypdfium2) |
+| OCR | Tesseract com o pacote de português, via pytesseract; Pillow |
+| Planilhas | openpyxl e os módulos `csv` e `json` da biblioteca padrão |
+| Frontend | React 19, Vite 8, ESLint |
+| Infraestrutura | Docker (build em dois estágios), Docker Compose |
 
-## Holerite
+## Decisões técnicas em destaque
 
-```jsonc
-{
-  "pages": [
-    {
-      "page": 1,
-      "year": "2020",
-      "month": "01",
-      "fields": [
-        { "code": "0010", "label": "Salário Base",     "reference": "220,00", "value": "2.389,77" },
-        { "code": "5560", "label": "Horas Extras - 50%", "reference": "8,00",  "value": "155,91" },
-        { "code": "0998", "label": "INSS",              "reference": "",      "value": "262,87" }
-      ],
-      "bases": [
-        { "label": "Base INSS",        "value": "2.545,68" },
-        { "label": "Total Vencimentos", "value": "2.545,68" },
-        { "label": "Valor Líquido",     "value": "2.282,81" }
-      ]
-    }
-  ]
-}
-```
+- **Limiar de confiança do OCR escolhido por medição.** A confiança por palavra no cartão escaneado tem distribuição bimodal. O corte em 60 fica no vale entre os dois picos: não marca nenhum horário legível e pega o ruído.
+- **OCR por página, não por documento.** A página vai para o OCR quando tem menos de 200 caracteres extraíveis, e não só quando tem zero. Um carimbo de assinatura eletrônica sobre uma imagem escaneada gera texto, mas não conteúdo.
+- **Original e interpretado lado a lado.** `date_raw` e `time_raw` guardam o que está impresso, e `time_hhmm` guarda o valor normalizado. Quando os dois divergem, dá para auditar a correção.
+- **Dinheiro como string.** `"2.389,77"` fica exatamente como foi impresso. Converter para float perde o formato e abre espaço para erro de arredondamento.
+- **Avisos derivados, nunca armazenados.** Eles são calculados a partir do próprio dado. Tabela e planilha seguem as mesmas regras, para a tela nunca mostrar uma coisa e o arquivo baixado outra.
+- **CSV com `;`.** É o separador que o Excel em português reconhece, então o arquivo abre certo com dois cliques.
 
-| Campo | Significado |
-|---|---|
-| `page` | Número da página no PDF, começando em 1 |
-| `year` / `month` | Competência, como string. `month` de `"01"` a `"12"`, com zero à esquerda |
-| `fields[]` | **Somente** as verbas da tabela principal de vencimentos e descontos |
-| `code` | Código da verba, se o documento mostrar. String vazia quando não houver |
-| `label` | Descrição da verba exatamente como impressa, **sem o código** |
-| `reference` | A coluna de quantidade/referência (QTDE, REF), se existir. String vazia quando não houver |
-| `value` | Valor monetário |
-| `bases[]` | **Somente** as bases e totais da seção separada, abaixo da tabela de verbas |
+O raciocínio completo de cada decisão, com as alternativas descartadas, está em [docs/decisoes-tecnicas.md](docs/decisoes-tecnicas.md).
 
-A separação entre `fields` e `bases` é a decisão central aqui. `Base INSS` e `Valor Líquido` não são verbas — não entram em `fields`. Errar essa divisão contamina a planilha inteira.
+## Documentos suportados
 
-**Valores monetários são string, no formato brasileiro** — `"2.389,77"`, não `2389.77`. Guardamos o que estava impresso; converter para float perde informação e introduz erro de arredondamento.
+Os PDFs de [`exemplos/`](exemplos) cobrem layouts variados. Quatro dos oito processam de ponta a ponta:
 
-## Para os dois: `_raw` e normalizado
-
-Repare no par `date_raw` / `time_raw` versus `time_hhmm`: guardamos **o que o documento diz** e **o que você interpretou**, separadamente. Quando os dois divergem, dá para auditar. Não descarte o original.
-
-## Incerteza
-
-Quando um caractere não deu para ler com segurança, use `?` no lugar dele:
-
-```jsonc
-{ "kind": "IN", "time_raw": "0?:25", "time_hhmm": "0?:25" }
-{ "code": "0010", "label": "Salário Base", "reference": "", "value": "2.3?9,77" }
-```
-
-Isso é melhor que descartar o registro e infinitamente melhor que chutar. A incerteza é **por caractere**, não por linha — dizer "esse dígito eu não li" é informação útil; "essa linha inteira é duvidosa" quase nunca é.
-
-## Avisos são derivados, não armazenados
-
-Cada tipo tem duas situações que merecem destaque na tabela e na planilha:
-
-**Cartão de ponto**
-- **Batidas ímpares** — o dia tem número ímpar de batidas, então falta uma entrada ou uma saída
-- **Data não sequencial** — a data da linha quebra a sequência do documento, o que costuma indicar erro de leitura
-
-**Holerite**
-- **Página vazia** — a página existe no PDF mas nenhum dado saiu dela
-- **Mês não sequencial** — a competência não é exatamente o mês seguinte à página anterior. Dezembro → janeiro conta como consecutivo; páginas cuja competência não deu para ler não quebram a cadeia, comparam-se as próximas legíveis entre si
-
-Nenhum deles é campo no JSON: todos saem **do próprio dado**, calculados na hora de exibir. Um holerite com 12 competências em ordem e um `13` no meio não precisa de flag — precisa de alguém que compare com as vizinhas.
-
----
-
-# As planilhas
-
-Formato real dos nossos exports. Em ambos, cabeçalho em negrito branco sobre o fundo `#173772`.
-
-## Cartão de ponto
-
-- Coluna `Data`, seguida de `Entrada 1`, `Saída 1`, `Entrada 2`, `Saída 2`, … alternando, com tantos pares quantos o dia com mais batidas exigir
-- Uma linha por dia, na ordem do documento
-
-## Holerite
-
-- Colunas fixas `Pág.`, `Mês`, `Ano`
-- Depois, **uma coluna por verba distinta**, formada pela união de todos os `label` de `fields`, na ordem de primeira aparição no documento
-- Uma linha por página. Na célula, o valor daquela verba naquela página; vazio quando a verba não aparece ali
-
-Ou seja: o documento é uma lista vertical de verbas por página, e a planilha é uma matriz larga. Essa transposição é o trabalho.
-
-## Destaques de linha
-
-| Situação | Preenchimento | Extra |
+| Arquivo | Tipo | Situação |
 |---|---|---|
-| Batidas ímpares, página vazia, ou algum `?` na linha | `#FFF3CD` (amarelo) | — |
-| Data ou mês não sequencial | `#F8D7DA` (vermelho) | Borda esquerda `#DC3545` na primeira célula |
+| `time-card-01` | cartão de ponto, texto nativo | ✅ 153 dias, 369 batidas |
+| `time-card-02` | cartão de ponto, escaneado | ✅ 152 dias, 318 batidas, via OCR |
+| `payroll-02` | holerite, texto nativo | ✅ 10 folhas em 5 páginas, 92 verbas |
+| `payroll-03` | holerite, texto nativo | ✅ 5 competências, 44 verbas |
+| `time-card-03` | cartão de ponto, escaneado | ⚠️ o OCR lê, mas o cabeçalho usa abreviações que o extrator não reconhece |
+| `time-card-04` | cartão de ponto, foto | ❌ imagem degradada: o OCR devolve quase só `?` |
+| `payroll-01` | ficha financeira | ⚠️ vários meses por página, com colunas lado a lado |
+| `payroll-04` | holerite, escaneado | ⚠️ o OCR lê, mas proventos e descontos ficam em colunas lado a lado |
 
-Quando as duas valem para a mesma linha, **vermelho ganha**.
+Nos casos ⚠️ o texto sai; o que falta é interpretar o layout. As planilhas geradas estão em [`saidas/`](saidas).
 
-Formatos aceitos para download: `.xlsx` (preferido), `.csv` ou `.json`.
+## Como executar
 
----
+### Com Docker (recomendado)
 
-# API HTTP
-
-O contrato abaixo é obrigatório e literal — é por ele que avaliamos a precisão automaticamente, independente da linguagem que você escolher. Divergir dele significa nota zero em precisão, mesmo com a extração perfeita.
-
-#### `POST /api/transcricoes`
-
-`multipart/form-data` com dois campos:
-
-- `arquivo` — o PDF
-- `tipo` — `cartao-ponto` ou `holerite`
-
-```http
-HTTP/1.1 202 Accepted
-{ "id": "abc123" }
+```bash
+git clone https://github.com/britodev21/transcrito.git
+cd transcrito
+docker compose up --build
 ```
 
-#### `GET /api/transcricoes/:id`
+A aplicação sobe em `http://localhost:8000`. A imagem já traz o Tesseract com o pacote de português, então o OCR funciona sem configuração.
 
-```http
-HTTP/1.1 200 OK
-{
-  "id": "abc123",
-  "tipo": "cartao-ponto",
-  "status": "concluido",
-  "erro": null,
-  "value": { "pages": [ ... ] }
-}
+### Localmente
+
+Requisitos: **Python 3.13+**, **Node 22+** e o **Tesseract** com o idioma português.
+
+- Linux: `apt install tesseract-ocr tesseract-ocr-por`
+- Windows: use o instalador do Tesseract e inclua o pacote `por`
+
+Sem o Tesseract, os PDFs com texto nativo continuam funcionando e os escaneados falham.
+
+Backend, na raiz do projeto:
+
+```bash
+python -m venv venv
+source venv/bin/activate            # Windows PowerShell: .\venv\Scripts\Activate.ps1
+pip install -r backend/requirements.txt
+uvicorn backend.main:app --reload
 ```
 
-`status` é um de `processando`, `concluido`, `erro`. Enquanto for `processando`, `value` é `null`. Em `erro`, `erro` traz mensagem legível.
+Frontend, em outro terminal:
 
-#### `PUT /api/transcricoes/:id`
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-Recebe `{ "value": { ... } }` com as correções feitas na interface e substitui a transcrição.
+A interface abre em `http://localhost:5173`. O Vite encaminha `/api` e `/healthz` para o backend na porta 8000, então não é preciso configurar CORS.
 
-#### `GET /api/transcricoes/:id/planilha`
+Para processar todos os PDFs de exemplo de uma vez e gerar as planilhas em `saidas/`:
 
-Devolve a planilha já com as correções aplicadas. Aceita `?formato=xlsx|csv|json`.
+```bash
+python gerar_saidas.py
+```
 
-#### `GET /healthz`
+## Variáveis de ambiente
 
-`200 OK` quando a aplicação está de pé.
+| Variável | Padrão | Descrição |
+|---|---|---|
+| `PORTA` | `8000` | Porta do host em que o `docker compose` expõe a aplicação. Dentro do contêiner, a porta é sempre 8000. |
 
----
+Copie [`.env.example`](.env.example) para `.env` para mudar a porta. A aplicação não usa segredos.
 
-# A interface
+## API
 
-O que precisa existir:
+| Método | Rota | Descrição |
+|---|---|---|
+| `POST` | `/api/transcricoes` | `multipart/form-data` com `arquivo` (PDF) e `tipo` (`cartao-ponto` ou `holerite`). Responde `202` com o `id`. |
+| `GET` | `/api/transcricoes/{id}` | Estado (`processando`, `concluido` ou `erro`) e a transcrição em `value` |
+| `PUT` | `/api/transcricoes/{id}` | Recebe `{ "value": ... }` com as correções e substitui a transcrição |
+| `GET` | `/api/transcricoes/{id}/planilha?formato=xlsx\|csv\|json` | Planilha gerada a partir da versão corrigida |
+| `GET` | `/api/transcricoes/{id}/documento` | PDF original, para exibição ao lado da tabela |
+| `GET` | `/healthz` | `200` quando a aplicação está no ar |
 
-- **Envio do PDF** com escolha do tipo e feedback de progresso — processar leva tempo, e a tela não pode parecer travada
-- **Tabela editável** com a transcrição, seguindo as colunas da planilha do tipo correspondente
-- **Problemas destacados** — os quatro avisos acima visualmente marcados, com o motivo legível, nas mesmas cores da planilha
-- **PDF visível ao lado da tabela**, para conferir sem trocar de janela
-- **Botão de download**, refletindo as edições
+A documentação interativa fica em `/docs`.
 
-Não precisa de login nem de design elaborado. Precisa ser honesta sobre o que a máquina não conseguiu ler, e precisa deixar corrigir.
+## Segurança e privacidade
 
-# Operação
+Os documentos processados têm nome, salário e jornada de pessoas reais, então:
 
-- **`Dockerfile` + `docker-compose.yml`**: `docker compose up` sobe tudo. Este é o requisito duro.
-- **Aplicação publicada**, com URL acessível. Qualquer plataforma gratuita serve, e não tem problema se ela dormir por inatividade — a URL é a demonstração, o `docker compose` é o que garante a avaliação.
-- Configuração por variável de ambiente. Nenhum segredo no repositório.
-- CI mínima (lint + testes) é diferencial.
+- o PDF é validado pelos primeiros bytes, e o tipo é validado antes de qualquer gravação em disco;
+- o arquivo salvo recebe um nome gerado pelo sistema, nunca o nome enviado pelo cliente, o que impede escapar do diretório de uploads;
+- a rota do PDF original confere que o caminho resolvido está dentro de `uploads/`;
+- o cliente recebe uma mensagem de erro genérica, e o detalhe técnico fica só no log do servidor;
+- no nível padrão (INFO), os logs registram só contagens e ids, nunca conteúdo dos documentos;
+- a retenção é curta: nada fica guardado entre reinícios, porque transcrições, PDFs e planilhas são descartados na inicialização;
+- a aplicação roda no contêiner com um usuário sem privilégios.
 
-# Segurança e privacidade
+## Deploy
 
-Você vai colocar na internet um endpoint público que recebe documento com nome, CPF, matrícula, salário e jornada de pessoas reais:
+A publicação em uma VPS própria está em andamento. Esta seção vai trazer a URL pública e a arquitetura de produção assim que a etapa for concluída.
 
-- Limite de tamanho de upload
-- Validação de que o arquivo é mesmo um PDF
-- Comportamento definido para arquivo corrompido, PDF gigante e uploads simultâneos
-- Política de retenção explícita em `SOLUCAO.md`: o que guarda, onde, por quanto tempo
-- Sem PII nos logs
+A imagem já está pronta para isso: um único contêiner com healthcheck em `/healthz` e `restart: unless-stopped`.
 
-# Tecnologia
+## Estrutura do projeto
 
-**Linguagem e bibliotecas livres.** Nos interessam fundamentos e raciocínio, não uma stack específica. A única coisa fechada é o contrato HTTP.
+```
+.
+├── backend/
+│   ├── main.py                 API, processamento em segundo plano e entrega do front
+│   ├── ocr.py                  texto nativo ou OCR, com marcação de incerteza
+│   ├── extrator.py             extrator de cartão de ponto
+│   ├── extrator_holerite.py    extrator de holerite
+│   └── planilha.py             geração de xlsx, csv e json, com os avisos
+├── frontend/src/
+│   ├── App.jsx                 envio, acompanhamento, salvar e baixar
+│   ├── Tabela.jsx              tabela editável
+│   ├── Documento.jsx           PDF original ao lado
+│   └── regrasTabela.js         colunas e avisos, espelhando o backend
+├── docs/                       decisões técnicas e processo de desenvolvimento
+├── exemplos/                   PDFs de exemplo
+├── saidas/                     planilhas geradas a partir dos exemplos
+├── gerar_saidas.py             processa todos os exemplos de uma vez
+├── checar.py, ver*.py          scripts usados para investigar os PDFs
+├── Dockerfile
+└── docker-compose.yml
+```
 
-# Sobre uso de IA
+## Próximos passos
 
-**Use os agentes e assistentes que quiser.** É assim que trabalhamos aqui, e fingir o contrário não ajudaria ninguém.
+- Publicação em VPS própria, com HTTPS
+- Limite de tamanho no upload
+- Persistência das transcrições, para sobreviverem a reinícios e a um recarregamento da página
+- Suíte de testes automatizada e CI com lint e testes
+- Novos layouts: ficha financeira, proventos e descontos lado a lado, cabeçalhos abreviados
 
-Em compensação, queremos ver como você conduz. Entregue um `PROCESSO.md` com:
+## Documentação
 
-- Que ferramentas usou e para quê
-- Dois ou três pontos em que o agente errou ou pegou o caminho errado, e como você percebeu
-- O que reescreveu à mão, e por quê
+- [Decisões técnicas](docs/decisoes-tecnicas.md): o porquê de cada escolha, as alternativas descartadas e as limitações conhecidas
+- [Processo de desenvolvimento](docs/processo.md): como conduzi o trabalho com agentes de IA (Claude e Claude Code), onde eles erraram e o que escrevi à mão
 
-E responda, no mesmo arquivo:
+## Origem
 
-1. Cite 3 decisões em que havia mais de uma resposta razoável. Por que escolheu essa?
-2. O que na sua solução quebra primeiro em produção?
-3. Onde você não confia no que entregou?
+O Transcrito nasceu como minha solução para um desafio técnico de processo seletivo. O desafio definiu o problema, os formatos de saída e o contrato da API, e autorizou o uso da solução em portfólio. A implementação é minha: extração, OCR, API, interface e infraestrutura. Hoje sigo evoluindo o projeto como trabalho pessoal, e o histórico de commits está preservado desde o início.
 
-Essas respostas pesam. Código impecável com `PROCESSO.md` vago é sinal ruim.
+## Autor e licença
 
-# Bônus
+Desenvolvido por [@britodev21](https://github.com/britodev21).
 
-Nenhum é necessário para uma entrega forte. Só faça se sobrar tempo.
-
-- **Rastreabilidade visual** — clicar numa célula da tabela e ver destacado, no PDF, o trecho exato de onde aquele valor saiu. É a funcionalidade central do nosso produto, e exige carregar as coordenadas do texto por todo o pipeline.
-- **Detecção do tipo** — descobrir sozinho se o PDF é cartão de ponto ou holerite, em vez de depender do campo `tipo`.
-- **Ficha financeira** — um holerite anual, com uma coluna por mês de janeiro a dezembro, vira uma entrada por mês compartilhando o mesmo `page`, ignorando a coluna `Total`.
-- **Layout desconhecido** — o que sua aplicação faz ao receber um documento de um layout que ela não conhece? Responder "não sei ler este documento" é melhor que devolver lixo.
-
-# Propriedade do que você entrega
-
-**A sua solução é sua.** Você mantém todos os direitos sobre o código que
-escrever, pode publicá-lo, reaproveitá-lo, colocá-lo no portfólio e licenciá-lo
-como quiser — independentemente do resultado do processo.
-
-O que pedimos é permissão para **avaliar** a entrega: executar, ler e discutir
-internamente o seu código durante o processo seletivo. Nada além disso. Não
-usamos solução de candidato em produção, não incorporamos trechos ao nosso
-código, e não repassamos a terceiros.
-
-O material **deste repositório** — enunciado, instruções, script de avaliação e
-documentos de exemplo — é CC0 1.0 (ver [`LICENSE`](LICENSE)). Use como quiser,
-inclusive para montar o processo seletivo da sua própria empresa.
-
-Se você preferir entregar num repositório privado e nos dar acesso em vez de
-publicar, tudo bem — avise o recrutador.
-
-# Entregáveis
-
-1. Link do repositório
-2. URL da aplicação publicada
-3. `SOLUCAO.md` — como rodar, decisões técnicas, o que ficou de fora
-4. `PROCESSO.md` — conforme a seção sobre uso de IA
-5. As planilhas geradas a partir dos PDFs em `exemplos/`
-
-# Como vamos avaliar
-
-Pesos e detalhes em [`INSTRUCOES.md`](INSTRUCOES.md).
-
-Depois da entrega, quem avançar faz uma sessão de ~40 minutos com a gente, ao vivo, estendendo a própria solução para um layout novo — com agente liberado.
-
-# Dúvidas
-
-Fale com o recrutador responsável. Perguntar quando o enunciado está ambíguo é comportamento desejável, não sinal de fraqueza.
-
----
-
-**Boa sorte! 🚀**
+O código está publicado como portfólio, **sem licença de uso: todos os direitos reservados**. Os PDFs de `exemplos/` não são de minha autoria; veja [exemplos/README.md](exemplos/README.md).

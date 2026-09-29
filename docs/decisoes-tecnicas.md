@@ -1,62 +1,17 @@
-# Solução
+# Decisões técnicas
  
 Transcrição de cartões de ponto e holerites em PDF para planilhas estruturadas, com revisão manual antes do download.
  
-## Como rodar
- 
-**Local**
- 
-Precisa de Python 3.13+, Node 22+ e o binário do Tesseract com o pacote de idioma português instalado — o `pip install pytesseract` traz só o wrapper. Sem ele os PDFs com camada de texto continuam funcionando e os escaneados falham.
- 
-Backend, a partir da raiz do repositório:
- 
-```bash
-python -m venv venv
-source venv/bin/activate            # Windows PowerShell: .\venv\Scripts\Activate.ps1
-pip install -r backend/requirements.txt
-uvicorn backend.main:app --reload
-```
- 
-API em `http://127.0.0.1:8000`, com `/healthz` respondendo `{"status":"ok"}`.
- 
-Frontend, em outro terminal:
- 
-```bash
-cd frontend
-npm install
-npm run dev
-```
- 
-Interface em `http://localhost:5173`. O Vite encaminha `/api` e `/healthz` para o backend, então nada de CORS precisa ser configurado.
- 
-Para rodar num processo só, como em produção: `npm run build` dentro de `frontend/` e depois o uvicorn. Com `frontend/dist` presente, o FastAPI serve a interface na própria porta 8000.
- 
-**Docker**
- 
-```bash
-docker compose up --build
-```
- 
-Aplicação em `http://localhost:8000`, interface e API na mesma porta. A imagem instala o Tesseract e o pacote de português, então o OCR funciona sem configuração nenhuma.
- 
-A porta do host sai da variável `PORTA`:
- 
-```bash
-PORTA=9000 docker compose up        # PowerShell: $env:PORTA=9000; docker compose up
-```
- 
-**Aplicação publicada**
- 
-https://desafio-quick-filler.onrender.com/
+Como rodar, tecnologias e visão geral estão no [README](../README.md). Aqui ficam as decisões e o porquê de cada uma.
 
 ---
- 
+
 ## Stack
  
-- **Backend**: Python + FastAPI. O gargalo do desafio é extração de documento, não serving HTTP, e o ecossistema de PDF e OCR do Python é mais maduro.
+- **Backend**: Python + FastAPI. O gargalo aqui é extração de documento, não serving HTTP, e o ecossistema de PDF e OCR do Python é mais maduro.
 - **Frontend**: React + Vite, buildado como estático e servido pelo próprio FastAPI. Um container só.
 - **PDF**: pdfplumber. **OCR**: Tesseract via pytesseract. **Planilha**: openpyxl.
-- **Deploy**: Render, via Docker.
+- **Deploy**: uma imagem Docker só, com interface e API na mesma porta.
 ---
  
 ## O que a solução cobre
@@ -90,11 +45,11 @@ O processamento roda em background: o POST devolve o id imediatamente e a extra�
  
 ## Armazenamento e retenção
  
-As transcrições ficam em memória, num dicionário do processo. Não uso banco: o enunciado diz que é opcional e que só precisa funcionar entre o envio e o download.
+As transcrições ficam em memória, num dicionário do processo. Não uso banco: a transcrição só precisa existir entre o envio e o download.
  
 Os PDFs enviados ficam em `uploads/` e as planilhas geradas em `planilhas/`. Ao iniciar, a aplicação apaga tudo dos dois diretórios: como o dicionário de transcrições nasce vazio a cada início, qualquer arquivo que estivesse lá é órfão sem id que o referencie.
  
-Isso resolve a retenção sem quebrar a tela de revisão, onde o PDF precisa estar disponível durante a sessão. No plano gratuito do Render, que dorme por inatividade, vira limpeza automática a cada ciclo.
+Isso resolve a retenção sem quebrar a tela de revisão, onde o PDF precisa estar disponível durante a sessão. Numa hospedagem que hiberna por inatividade, isso vira limpeza automática a cada ciclo.
  
 Arquivo travado por outro processo é contado à parte e vira aviso, sem derrubar a subida. Subpastas não são tocadas.
  
@@ -204,13 +159,13 @@ Uma linha por dia, coluna Data mais os pares Entrada/Saída, com tantos pares qu
  
 A transposição. No documento as verbas são lista vertical por página; na planilha viram matriz larga, uma coluna por verba distinta na ordem de primeira aparição global no documento.
  
-Só `fields` viram coluna. As `bases` ficam fora da planilha, conforme o contrato, e é justamente isso que o enunciado chama de "contaminar a planilha" se uma base entrar em `fields` por engano.
+Só `fields` viram coluna. As `bases` ficam fora da planilha, conforme o contrato: uma base que entrasse em `fields` por engano viraria coluna e contaminaria a planilha inteira.
  
 **Avisos**
  
 Os quatro avisos são derivados na hora de gerar, nunca campos do JSON.
  
-Uma data com `?` não vira alerta vermelho, e a próxima data legível é comparada com a última legível, não com a ilegível. O enunciado escreve essa regra para o holerite; estendi por analogia para o cartão de ponto, onde o texto não detalha. O efeito é que `10/07 → 1?/07 → 12/07` marca o `12/07` como não sequencial, porque a comparação vê salto de dois dias. Se o `1?` era 11, a linha foi marcada à toa: é a leitura conservadora, porque marcar a mais é melhor que deixar passar.
+Uma data com `?` não vira alerta vermelho, e a próxima data legível é comparada com a última legível, não com a ilegível. A especificação escreve essa regra para o holerite; estendi por analogia para o cartão de ponto, onde ela não detalha. O efeito é que `10/07 → 1?/07 → 12/07` marca o `12/07` como não sequencial, porque a comparação vê salto de dois dias. Se o `1?` era 11, a linha foi marcada à toa: é a leitura conservadora, porque marcar a mais é melhor que deixar passar.
  
 **Separador do CSV**
  
@@ -236,7 +191,7 @@ A planilha é gerada a partir do `value` atual da transcrição, que é o corrig
  
 **409 para transcrição ainda não pronta**
  
-Não 404 nem 400. A transcrição existe, o problema é o estado: 404 diria que o recurso não existe, e 400 culparia o pedido, que está correto. O mesmo 409 cobre `status: erro`, com a mensagem dizendo qual dos dois casos é. O enunciado não fixa código para essa situação.
+Não 404 nem 400. A transcrição existe, o problema é o estado: 404 diria que o recurso não existe, e 400 culparia o pedido, que está correto. O mesmo 409 cobre `status: erro`, com a mensagem dizendo qual dos dois casos é. O contrato da API não fixa código para essa situação.
  
 **Ordem das validações**
  
@@ -264,7 +219,7 @@ Editar uma batida altera o `time_hhmm` e preserva o `time_raw`. É o par que o c
  
 Digitar numa coluna além das batidas existentes cria a batida. Sem isso, o dia com aviso de batidas ímpares não teria como ser corrigido pela interface, que é justamente o problema que o aviso existe para sinalizar.
  
-Além da cor, uma coluna no fim traz o motivo do destaque em texto. Cor sozinha não comunica para quem não distingue cores ou usa leitor de tela, e o enunciado pede o motivo legível.
+Além da cor, uma coluna no fim traz o motivo do destaque em texto. Cor sozinha não comunica para quem não distingue cores ou usa leitor de tela.
  
 **PDF ao lado**
  
@@ -295,11 +250,9 @@ O Vite encaminha `/api` e `/healthz` para o backend em desenvolvimento. Assim as
 - O nível de log é INFO e não DEBUG: DEBUG no logger raiz ligaria junto o do `pdfminer`, que despeja o log interno do parser.
 ---
  
-## Testes
+## Validações
  
-- Paridade entre tela e planilha: escolhi esse caso para garantir que o que aparece na tela seja igual ao que é gerado no arquivo baixado.
-- Regras de destaque que o dado real não exercita: escolhi casos sintéticos para testar também as regras de alerta que os documentos reais não acionam.
-- Regressão a cada mudança em peça compartilhada: escolhi o payroll-03 para garantir que uma alteração em um padrão compartilhado não quebrasse um documento que já funcionava.
+Três verificações guiaram o desenvolvimento. Foram feitas durante a construção, mas ainda não estão versionadas no repositório como suíte automatizada: transformá-las em testes com CI é o próximo passo.
  
 **Paridade entre tela e planilha**
  
@@ -333,7 +286,7 @@ No Windows, o `pip install pytesseract` instala só o wrapper. O binário do Tes
  
 ---
  
-## O que ficou de fora
+## Ainda não implementado
  
 - Layouts de holerite do `payroll-01` (ficha financeira) e do `payroll-04` (proventos e descontos lado a lado).
 - Layouts de cartão de ponto do `time-card-03` (cabeçalho ilegível após OCR) e do `time-card-04` (foto que o OCR não lê).
@@ -370,9 +323,3 @@ página de puro ruído produz caracteres suficientes para passar no teste de
 "tem texto útil", e o diagnóstico conclui que o problema é layout quando na
 verdade o OCR não leu nada. Foi o que aconteceu com o `time-card-04`.
 Cruzar a proporção de palavras incertas antes de concluir resolveria.
- 
----
- 
-## O que eu mudaria no formato JSON
- 
-Acredito que eu não mudaria nada no formato JSON. Vejo que no formato atual o sistema interpreta bem, e não reatiraria e não adicionaria nada no corpo, da forma que está, tem o necessário.
