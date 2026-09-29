@@ -261,8 +261,8 @@ function App() {
   return (
     <main className={larguraDaPagina}>
       <header className="cabecalho">
-        <h1>Transcrição de documentos</h1>
-        <p>Envie um cartão de ponto ou holerite em PDF.</p>
+        <h1>Transcrito</h1>
+        <p>Envie um cartão de ponto ou holerite em PDF, revise a transcrição e baixe a planilha.</p>
       </header>
 
       <form className="formulario" onSubmit={enviar}>

@@ -12,14 +12,13 @@
 
 :root {
   /*
-   * As quatro cores abaixo são literais do enunciado e não podem ser
-   * ajustadas por gosto: são as mesmas que a planilha gerada usa, e a tela
-   * precisa bater com o arquivo baixado.
-   *   #173772  cabeçalho (texto branco negrito por cima)
+   * As quatro cores abaixo são as mesmas do backend/planilha.py e não podem
+   * mudar só aqui: a tela precisa bater com o arquivo baixado.
+   *   #0B5D57  cabeçalho (texto branco negrito por cima)
    *   #FFF3CD  destaque amarelo, "a conferir"
    *   #F8D7DA  destaque vermelho, com borda esquerda #DC3545
    */
-  --marca: #173772;
+  --marca: #0b5d57;
   --amarelo: #fff3cd;
   --vermelho: #f8d7da;
   --borda-vermelha: #dc3545;
@@ -50,13 +49,13 @@
     0 1px 3px rgba(16, 24, 40, 0.06);
 
   /*
-   * Realce de hover, derivado do azul da marca. O template do Vite traz um
+   * Realce de hover, derivado da cor da marca. O template do Vite traz um
    * --accent roxo que não tem nada a ver com esta tela: usá-lo faria cada
    * passagem de mouse acender uma cor que não existe em lugar nenhum do
    * documento nem da planilha.
    */
-  --realce-fundo: rgba(23, 55, 114, 0.06);
-  --realce-borda: rgba(23, 55, 114, 0.35);
+  --realce-fundo: rgba(11, 93, 87, 0.06);
+  --realce-borda: rgba(11, 93, 87, 0.35);
 
   /* Altura mínima de alvo tocável. 44px é o piso recomendado pra dedo. */
   --alvo: 2.75rem;
@@ -64,14 +63,14 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    /* Só o azul da marca clareia: sobre fundo escuro, o #173772 original
+    /* Só a cor da marca clareia: sobre fundo escuro, o #0B5D57 original
        ficaria ilegível como texto. As faixas de destaque seguem literais. */
-    --marca: #7ea2e0;
+    --marca: #5cc3b6;
     --sombra-carta: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.25);
-    /* O realce acompanha o azul claro: sobre fundo escuro, o azul original
+    /* O realce acompanha o tom claro: sobre fundo escuro, o tom original
        some e a passagem de mouse deixaria de ser visível. */
-    --realce-fundo: rgba(126, 162, 224, 0.12);
-    --realce-borda: rgba(126, 162, 224, 0.45);
+    --realce-fundo: rgba(92, 195, 182, 0.12);
+    --realce-borda: rgba(92, 195, 182, 0.45);
   }
 }
 
@@ -539,7 +538,7 @@ button.secundario:hover:not(:disabled) {
  * saber mais de que linha ela é torna a conferência impossível: a Data (ou a
  * Pág.) precisa continuar à vista.
  *
- * O background: inherit é o que mantém as cores do enunciado intactas - a
+ * O background: inherit é o que mantém as cores da planilha intactas - a
  * célula presa herda do <tr>, então a linha amarela continua #FFF3CD e a
  * vermelha #F8D7DA, sem cor nova nenhuma inventada aqui.
  */

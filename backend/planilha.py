@@ -9,7 +9,7 @@ from openpyxl.styles import Border, Font, PatternFill, Side
 
 logger = logging.getLogger(__name__)
 
-COR_CABECALHO = "173772"
+COR_CABECALHO = "0B5D57"
 COR_AMARELO = "FFF3CD"
 COR_VERMELHO = "F8D7DA"
 COR_BORDA_VERMELHA = "DC3545"

@@ -125,7 +125,7 @@ async def ciclo_de_vida(app):
     yield
 
 
-app = FastAPI(lifespan=ciclo_de_vida)
+app = FastAPI(title="Transcrito", lifespan=ciclo_de_vida)
 
 
 def processar_documento(id_transcricao: str, caminho_pdf: Path, tipo: str):
