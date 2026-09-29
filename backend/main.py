@@ -44,8 +44,8 @@ DIRETORIO_UPLOADS.mkdir(parents=True, exist_ok=True)
 # Todo PDF comeca com esses bytes. A extensao do nome nao prova nada.
 ASSINATURA_PDF = b"%PDF"
 
-# Planilhas geradas. Separado de saidas/, que guarda os entregaveis do
-# desafio: aqui e artefato de execucao, um arquivo por transcricao.
+# Planilhas geradas. Separado de saidas/, que guarda as planilhas dos PDFs
+# de exemplo: aqui e artefato de execucao, um arquivo por transcricao.
 DIRETORIO_PLANILHAS = Path(__file__).resolve().parent.parent / "planilhas"
 DIRETORIO_PLANILHAS.mkdir(parents=True, exist_ok=True)
 

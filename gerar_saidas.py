@@ -49,9 +49,9 @@ EXTRATORES = {
 
 """
 Prefixos aceitos por tipo. Sao dois por tipo de proposito: os arquivos em
-exemplos/ vieram em ingles (time-card-01.pdf), mas o README da pasta descreve
-os mesmos documentos em portugues (cartao-ponto-1.pdf). Aceitar os dois evita
-que um exemplo renomeado apareca no resumo como falha sem ser.
+exemplos/ estao em ingles (time-card-01.pdf), e aceitar tambem o nome em
+portugues (cartao-ponto-1.pdf) evita que um exemplo renomeado apareca no
+resumo como falha sem ser.
 """
 PREFIXOS = {
     CARTAO_PONTO: ("time-card", "cartao-ponto"),

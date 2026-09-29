@@ -1,23 +1,26 @@
 # Documentos de exemplo
 
-PDFs para você desenvolver e testar. Todos são documentos reais com os dados
-pessoais substituídos.
+PDFs usados para desenvolver e validar os extratores. São documentos reais,
+com os dados pessoais substituídos, e não são de minha autoria: vieram junto
+com a especificação que deu origem ao projeto.
 
 ```
 exemplos/
-├── cartao-ponto-1.pdf
-├── cartao-ponto-2.pdf
-├── holerite-1.pdf
-└── holerite-2.pdf
+├── time-card-01.pdf   cartão de ponto, texto nativo
+├── time-card-02.pdf   cartão de ponto, escaneado (OCR)
+├── time-card-03.pdf   cartão de ponto, escaneado (OCR)
+├── time-card-04.pdf   cartão de ponto, foto (OCR)
+├── payroll-01.pdf     ficha financeira, texto nativo
+├── payroll-02.pdf     holerite, texto nativo
+├── payroll-03.pdf     holerite, texto nativo
+└── payroll-04.pdf     holerite, escaneado (OCR)
 ```
 
-## Importante
+As planilhas geradas a partir deles ficam em [`saidas/`](../saidas), e
+`python gerar_saidas.py`, na raiz, refaz todas de uma vez.
 
-**Nem todos têm camada de texto.** Parte destes arquivos é imagem escaneada, e
-extrair o texto embutido devolve vazio neles. Sua solução precisa reconhecer o
-caso e passar por OCR — ver o `README.md` na raiz.
+Nem todos os layouts são lidos. A situação de cada arquivo está no
+[README](../README.md#documentos-suportados).
 
-Além disso, estes são os documentos que você **vê**, não a especificação. Uma
-data, um nome de coluna, uma posição fixa na página ou um número de páginas
-gravado no código resolve o exemplo e quebra em qualquer outro layout. Trate-os
-como amostra.
+São uma amostra, não uma especificação: um documento de layout diferente
+destes pode não ser reconhecido.

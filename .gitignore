@@ -4,9 +4,6 @@ uploads/
 # Planilhas geradas pela rota de download em tempo de execução
 planilhas/
 
-# Ferramentas internas de correção (não publicar)
-avaliacao/
-
 # Dependências
 node_modules/
 venv/
@@ -28,8 +25,5 @@ Thumbs.db
 .env
 .env.local
 
-# Organização pessoal
-progresso-visual-desafio-quick-filler.html
-
-# NOTA: os PDFs de `exemplos/` e as planilhas entregues devem ser
-# versionados. Não adicione `*.pdf` / `*.xlsx` aqui.
+# NOTA: os PDFs de `exemplos/` e as planilhas de `saidas/` são versionados.
+# Não adicione `*.pdf` / `*.xlsx` aqui.
