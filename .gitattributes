@@ -1,0 +1,4 @@
+# As planilhas de saidas/ sao a saida exata do gerar_saidas.py, e o modulo
+# csv grava CRLF em qualquer sistema. Sem isto o autocrlf do Windows troca por
+# LF no commit, e o CSV versionado deixa de ser o que o gerador produz.
+saidas/*.csv -text
