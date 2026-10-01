@@ -44,6 +44,15 @@ DIRETORIO_UPLOADS.mkdir(parents=True, exist_ok=True)
 # Todo PDF comeca com esses bytes. A extensao do nome nao prova nada.
 ASSINATURA_PDF = b"%PDF"
 
+"""
+Teto do upload. O maior PDF de exemplo tem 4 MB (a foto do time-card-04), e
+20 MB deixa folga pra um escaneado de varias paginas sem deixar qualquer
+arquivo encher uploads/. Em producao o Traefik corta antes o que passar muito
+disso; este limite e o que devolve uma mensagem legivel.
+"""
+LIMITE_UPLOAD_MB = 20
+LIMITE_UPLOAD_BYTES = LIMITE_UPLOAD_MB * 1024 * 1024
+
 # Planilhas geradas. Separado de saidas/, que guarda as planilhas dos PDFs
 # de exemplo: aqui e artefato de execucao, um arquivo por transcricao.
 DIRETORIO_PLANILHAS = Path(__file__).resolve().parent.parent / "planilhas"
@@ -284,12 +293,21 @@ async def criar_transcricao(
             detail=f"Tipo inválido. Use um destes: {', '.join(EXTRATORES)}.",
         )
 
-    conteudo = await arquivo.read()
-
     """
-    Le o arquivo inteiro antes de gravar pra checar a assinatura: assim um
+    Le o arquivo antes de gravar pra checar tamanho e assinatura: assim um
     upload invalido nunca deixa um .pdf pela metade em uploads/.
+
+    Le um byte alem do limite: se ele veio, o arquivo passou do teto, e o
+    resto nem chega a ser carregado na memoria.
     """
+    conteudo = await arquivo.read(LIMITE_UPLOAD_BYTES + 1)
+
+    if len(conteudo) > LIMITE_UPLOAD_BYTES:
+        raise HTTPException(
+            status_code=413,
+            detail=f"O arquivo passa do limite de {LIMITE_UPLOAD_MB} MB.",
+        )
+
     if not conteudo.startswith(ASSINATURA_PDF):
         raise HTTPException(
             status_code=400,

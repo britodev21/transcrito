@@ -1,0 +1,32 @@
+# Producao: o Transcrito atras do Traefik que ja roda na VPS e cuida do HTTPS.
+#
+# Na VPS, o .env aponta o compose para os dois arquivos, entao basta:
+#
+#   docker compose up -d --build
+#
+# O Traefik roda na rede do host e acha os servicos pelos labels. Cada projeto
+# da VPS tem a propria rede, e o traefik.docker.network diz por qual delas ele
+# chega neste conteiner.
+services:
+  app:
+    # Nenhuma porta publicada: o unico caminho de fora e o Traefik, com HTTPS.
+    ports: !reset []
+    networks:
+      - web
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=transcrito-web
+      - traefik.http.routers.transcrito.rule=Host(`${DOMINIO:?defina DOMINIO no .env}`)
+      - traefik.http.routers.transcrito.entrypoints=${TRAEFIK_ENTRYPOINT:-websecure}
+      - traefik.http.routers.transcrito.tls=true
+      - traefik.http.routers.transcrito.tls.certresolver=${TRAEFIK_CERTRESOLVER:-letsencrypt}
+      - traefik.http.routers.transcrito.middlewares=transcrito-upload
+      # Corta no proxy o corpo acima de 25 MB, antes de chegar na aplicacao.
+      # Fica acima dos 20 MB do LIMITE_UPLOAD_MB de proposito: ate ali quem
+      # responde e o backend, com mensagem legivel; isto e so pra abuso.
+      - traefik.http.middlewares.transcrito-upload.buffering.maxRequestBodyBytes=26214400
+      - traefik.http.services.transcrito.loadbalancer.server.port=8000
+
+networks:
+  web:
+    name: transcrito-web

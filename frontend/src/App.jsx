@@ -12,6 +12,10 @@ const INTERVALO_POLLING = 2000
 
 const FORMATOS = ['xlsx', 'csv', 'json']
 
+// Mesmo teto do backend (LIMITE_UPLOAD_MB no main.py). Conferir aqui poupa
+// mandar o arquivo inteiro pela rede só pra ouvir um 413.
+const LIMITE_UPLOAD_MB = 20
+
 /*
  * Tira o nome do arquivo do Content-Disposition que o backend manda, pra o
  * arquivo salvo ter o mesmo nome que teria num download direto.
@@ -116,6 +120,10 @@ function App() {
     setSegundos(0)
 
     try {
+      if (arquivo.size > LIMITE_UPLOAD_MB * 1024 * 1024) {
+        throw new Error(`O arquivo passa do limite de ${LIMITE_UPLOAD_MB} MB.`)
+      }
+
       const corpo = new FormData()
       corpo.append('arquivo', arquivo)
       corpo.append('tipo', tipo)
@@ -267,7 +275,7 @@ function App() {
 
       <form className="formulario" onSubmit={enviar}>
         <div className="campo">
-          <label htmlFor="arquivo">Arquivo PDF</label>
+          <label htmlFor="arquivo">Arquivo PDF (até {LIMITE_UPLOAD_MB} MB)</label>
           <input
             id="arquivo"
             name="arquivo"

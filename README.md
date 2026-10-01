@@ -202,7 +202,7 @@ A documentação interativa fica em `/docs`.
 
 Os documentos processados têm nome, salário e jornada de pessoas reais, então:
 
-- o PDF é validado pelos primeiros bytes, e o tipo é validado antes de qualquer gravação em disco;
+- o PDF é validado pelos primeiros bytes, e o tipo e o tamanho (até 20 MB) são validados antes de qualquer gravação em disco;
 - o arquivo salvo recebe um nome gerado pelo sistema, nunca o nome enviado pelo cliente, o que impede escapar do diretório de uploads;
 - a rota do PDF original confere que o caminho resolvido está dentro de `uploads/`;
 - o cliente recebe uma mensagem de erro genérica, e o detalhe técnico fica só no log do servidor;
@@ -212,9 +212,28 @@ Os documentos processados têm nome, salário e jornada de pessoas reais, então
 
 ## Deploy
 
-A publicação em uma VPS própria está em andamento. Esta seção vai trazer a URL pública e a arquitetura de produção assim que a etapa for concluída.
+Em produção em **https://transcrito.brunobrito.tech**, numa VPS Ubuntu que divide o servidor com outros projetos.
 
-A imagem já está pronta para isso: um único contêiner com healthcheck em `/healthz` e `restart: unless-stopped`.
+```
+internet ──443──> Traefik ──rede transcrito-web──> app (uvicorn :8000)
+                  (HTTPS, Let's Encrypt,           FastAPI + front buildado,
+                   corta upload acima de 25 MB)    Tesseract no contêiner
+```
+
+- O Traefik já roda na VPS, na rede do host, e atende todos os projetos. Ele acha o Transcrito pelos labels do [docker-compose.prod.yml](docker-compose.prod.yml) e emite o certificado sozinho.
+- O contêiner não publica porta nenhuma: o único caminho de fora é o Traefik.
+- O upload tem dois limites. A aplicação recusa acima de 20 MB, com mensagem legível, e o Traefik corta acima de 25 MB, antes de o corpo chegar ao backend.
+
+Instalação na VPS, com o registro DNS já apontando para ela:
+
+```bash
+git clone https://github.com/britodev21/transcrito.git /docker/transcrito
+cd /docker/transcrito
+cp .env.example .env    # descomente COMPOSE_FILE e DOMINIO
+docker compose up -d --build
+```
+
+Para atualizar: `git pull && docker compose up -d --build`.
 
 ## Estrutura do projeto
 
@@ -246,13 +265,12 @@ A imagem já está pronta para isso: um único contêiner com healthcheck em `/h
 ├── checar.py, ver*.py          scripts usados para investigar os PDFs
 ├── .github/workflows/ci.yml    lint, testes e build a cada push
 ├── Dockerfile
-└── docker-compose.yml
+├── docker-compose.yml
+└── docker-compose.prod.yml     produção atrás do Traefik, com HTTPS
 ```
 
 ## Próximos passos
 
-- Publicação em VPS própria, com HTTPS
-- Limite de tamanho no upload
 - Persistência das transcrições, para sobreviverem a reinícios e a um recarregamento da página
 - Novos layouts: ficha financeira, proventos e descontos lado a lado, cabeçalhos abreviados
 

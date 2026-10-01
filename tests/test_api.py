@@ -85,6 +85,26 @@ def test_arquivo_que_nao_e_pdf_e_recusado_sem_gravar_nada(cliente, pastas):
     assert main.transcricoes == {}
 
 
+def test_arquivo_acima_do_limite_e_recusado_sem_gravar_nada(
+    cliente, pastas, monkeypatch
+):
+    monkeypatch.setattr(main, "LIMITE_UPLOAD_BYTES", 1000)
+
+    resposta = enviar(cliente, b"%PDF" + b"0" * 997)
+
+    assert resposta.status_code == 413
+    assert list(pastas[0].iterdir()) == []
+    assert main.transcricoes == {}
+
+
+def test_arquivo_no_limite_exato_passa(cliente, pastas, monkeypatch):
+    monkeypatch.setattr(main, "LIMITE_UPLOAD_BYTES", 1000)
+
+    resposta = enviar(cliente, b"%PDF" + b"0" * 996)
+
+    assert resposta.status_code == 202
+
+
 def test_nome_do_arquivo_enviado_nao_e_usado_no_disco(cliente, pastas):
     resposta = enviar(cliente, PDF_CARTAO.read_bytes(), nome="../../fora.pdf")
     id_ = resposta.json()["id"]
