@@ -1,0 +1,17 @@
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+# Lista explicita: o conjunto padrao muda entre versoes do ruff, e o CI nao
+# pode comecar a falhar por causa de uma regra que ninguem escolheu.
+select = ["E", "W", "F", "I", "B", "UP"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+# O OCR leva minutos e depende da versao do tesseract: fica fora da rodada
+# padrao e roda com "pytest -m ocr".
+addopts = '-m "not ocr"'
+markers = [
+    "ocr: depende do tesseract com o idioma portugues instalado",
+]

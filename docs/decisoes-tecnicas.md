@@ -252,19 +252,25 @@ O Vite encaminha `/api` e `/healthz` para o backend em desenvolvimento. Assim as
  
 ## Validações
  
-Três verificações guiaram o desenvolvimento. Foram feitas durante a construção, mas ainda não estão versionadas no repositório como suíte automatizada: transformá-las em testes com CI é o próximo passo.
+As verificações que guiaram o desenvolvimento estão versionadas em `tests/` e rodam no CI a cada push, junto com o lint do backend (ruff), o do frontend (eslint) e o build do front.
  
-**Paridade entre tela e planilha**
+**Paridade entre tela e planilha** (`test_paridade.py`)
  
-O front espelha as regras do backend, e isso era só uma promessa em comentário. O teste monta a tabela nas duas implementações sobre o mesmo dado e compara colunas, células e destaques. Sem ele, a tela poderia mostrar uma coisa e o arquivo baixado outra.
+O front espelha as regras do backend, e isso era só uma promessa em comentário. O teste monta a tabela nas duas implementações sobre o mesmo dado e compara colunas, células e destaques. Sem ele, a tela poderia mostrar uma coisa e o arquivo baixado outra. O lado da tela roda no Node, chamado pelo pytest, sobre os casos sintéticos e as quatro saídas reais.
  
-**Regras de destaque que o dado real não exercita**
+**Regras de destaque que o dado real não exercita** (`test_planilha.py`)
  
-O `time-card-01` tem datas perfeitamente sequenciais, então só uma das quatro regras disparava. As outras três foram testadas com dados sintéticos, lendo as cores de volta do arquivo salvo em vez de conferir só o código.
+O `time-card-01` tem datas perfeitamente sequenciais, então só uma das quatro regras disparava. As outras três são testadas com dados sintéticos (`tests/casos.py`), lendo as cores de volta do arquivo salvo em vez de conferir só o código. O teste também confere que o destaque cobre a linha inteira, e não só as colunas preenchidas.
  
-**Regressão a cada mudança em peça compartilhada**
+**Regressão a cada mudança em peça compartilhada** (`test_regressao.py`)
  
-O `payroll-03` roda como regressão sempre que o extrator de holerite muda, porque padrões como o de valor e o de código são usados pelos dois documentos.
+Padrões como o de valor e o de código são usados pelos dois extratores, então mexer num pode quebrar o outro. Os três exemplos de texto nativo (`time-card-01`, `payroll-02`, `payroll-03`) são extraídos de novo e comparados com `saidas/`: o JSON por igualdade, o CSV byte a byte e o xlsx célula a célula, valor e cor. Mudança de comportamento intencional refaz `saidas/` com o `gerar_saidas.py` no mesmo commit.
+ 
+O `time-card-02`, escaneado, fica fora da rodada padrão e roda com `pytest -m ocr`. Leva minutos e depende da versão do Tesseract: as saídas foram geradas com a 5.4.0, e outra versão pode ler um dígito diferente sem que o extrator tenha mudado.
+ 
+**API e as barreiras de segurança** (`test_api.py`)
+ 
+O ciclo completo pela API: upload, processamento, correção e download nos três formatos, com a correção aparecendo na planilha. E as recusas: tipo inválido, arquivo que não é PDF (sem deixar nada em disco), id inexistente, planilha pedida antes de a transcrição terminar. A segunda barreira da rota do documento é testada com um arquivo real fora de `uploads/`: sem esse teste, remover a proteção de caminho num refactor não quebraria nada.
  
 ---
  
@@ -290,7 +296,6 @@ No Windows, o `pip install pytesseract` instala só o wrapper. O binário do Tes
  
 - Layouts de holerite do `payroll-01` (ficha financeira) e do `payroll-04` (proventos e descontos lado a lado).
 - Layouts de cartão de ponto do `time-card-03` (cabeçalho ilegível após OCR) e do `time-card-04` (foto que o OCR não lê).
-- CI com lint e testes.
 ---
  
 ## Limitações conhecidas

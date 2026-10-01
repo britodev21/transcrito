@@ -2,6 +2,7 @@
 
 **Cartões de ponto e holerites em PDF viram planilhas, e a pessoa revisa tudo antes do download.**
 
+[![CI](https://github.com/britodev21/transcrito/actions/workflows/ci.yml/badge.svg)](https://github.com/britodev21/transcrito/actions/workflows/ci.yml)
 ![Python](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.141-009688?logo=fastapi&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
@@ -84,6 +85,7 @@ flowchart TD
 | Planilhas | openpyxl e os módulos `csv` e `json` da biblioteca padrão |
 | Frontend | React 19, Vite 8, ESLint |
 | Infraestrutura | Docker (build em dois estágios), Docker Compose |
+| Testes e CI | pytest, ruff, GitHub Actions |
 
 ## Decisões técnicas em destaque
 
@@ -159,6 +161,22 @@ Para processar todos os PDFs de exemplo de uma vez e gerar as planilhas em `said
 python gerar_saidas.py
 ```
 
+### Testes
+
+```bash
+pip install -r requirements-dev.txt
+ruff check .
+pytest
+```
+
+A rodada padrão leva cerca de um minuto e não precisa do Tesseract. Ela cobre a API de ponta a ponta, as regras de destaque lidas de volta do xlsx, a paridade entre a tabela da tela e a planilha (precisa do Node) e a regressão dos exemplos de texto nativo contra `saidas/`. A regressão do exemplo escaneado leva alguns minutos e depende da versão do Tesseract, por isso roda à parte:
+
+```bash
+pytest -m ocr
+```
+
+O [CI](.github/workflows/ci.yml) roda ruff e pytest no backend, e eslint e build no frontend, a cada push na `main` e em todo pull request.
+
 ## Variáveis de ambiente
 
 | Variável | Padrão | Descrição |
@@ -213,11 +231,20 @@ A imagem já está pronta para isso: um único contêiner com healthcheck em `/h
 │   ├── Tabela.jsx              tabela editável
 │   ├── Documento.jsx           PDF original ao lado
 │   └── regrasTabela.js         colunas e avisos, espelhando o backend
+├── tests/
+│   ├── casos.py                documentos sintéticos para cada regra de destaque
+│   ├── test_api.py             ciclo completo da API e as recusas
+│   ├── test_planilha.py        destaques lidos de volta do xlsx
+│   ├── test_paridade.py        tela e planilha montam a mesma tabela
+│   ├── paridade.mjs            lado da tela do teste de paridade, roda no Node
+│   ├── test_regressao.py       exemplos comparados com saidas/
+│   └── test_ocr.py             marcação de incerteza e decisão de OCR
 ├── docs/                       decisões técnicas e processo de desenvolvimento
 ├── exemplos/                   PDFs de exemplo
 ├── saidas/                     planilhas geradas a partir dos exemplos
 ├── gerar_saidas.py             processa todos os exemplos de uma vez
 ├── checar.py, ver*.py          scripts usados para investigar os PDFs
+├── .github/workflows/ci.yml    lint, testes e build a cada push
 ├── Dockerfile
 └── docker-compose.yml
 ```
@@ -227,7 +254,6 @@ A imagem já está pronta para isso: um único contêiner com healthcheck em `/h
 - Publicação em VPS própria, com HTTPS
 - Limite de tamanho no upload
 - Persistência das transcrições, para sobreviverem a reinícios e a um recarregamento da página
-- Suíte de testes automatizada e CI com lint e testes
 - Novos layouts: ficha financeira, proventos e descontos lado a lado, cabeçalhos abreviados
 
 ## Documentação

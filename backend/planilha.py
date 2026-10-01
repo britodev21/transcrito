@@ -253,7 +253,9 @@ def valores_por_verba(pagina):
     """Mapeia rotulo de coluna -> value dentro de uma pagina."""
     return {
         rotulo: field["value"]
-        for rotulo, field in zip(rotulos_das_verbas(pagina), pagina["fields"])
+        for rotulo, field in zip(
+            rotulos_das_verbas(pagina), pagina["fields"], strict=True
+        )
     }
 
 
@@ -397,7 +399,7 @@ def escrever_xlsx(tabela, titulo_aba, caminho_saida, congelar):
     escrever_cabecalho(aba, tabela.cabecalho)
 
     for numero_linha, (valores, aviso) in enumerate(
-        zip(tabela.linhas, tabela.avisos), start=2
+        zip(tabela.linhas, tabela.avisos, strict=True), start=2
     ):
         escrever_linha(aba, numero_linha, valores, len(tabela.cabecalho), aviso)
 

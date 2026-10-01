@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend:
+    name: Backend (ruff + pytest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # Mesma versao do Dockerfile: o CI testa o Python que vai pra producao.
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: |
+            backend/requirements.txt
+            requirements-dev.txt
+
+      # O teste de paridade roda as regras da tela no node.
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Instala as dependencias
+        run: pip install -r backend/requirements.txt -r requirements-dev.txt
+
+      - name: Lint
+        run: ruff check .
+
+      # Sem tesseract no runner: os testes de OCR ficam fora (pytest -m ocr).
+      - name: Testes
+        run: pytest
+
+  frontend:
+    name: Frontend (eslint + build)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run build
