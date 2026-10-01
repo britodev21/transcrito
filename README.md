@@ -29,7 +29,8 @@ O princípio que guia o projeto: **nunca inventar um valor**. Quando um caracter
 
 ## Funcionalidades
 
-- **Envio de PDF**, escolhendo o tipo: cartão de ponto ou holerite
+- **Envio de PDF** clicando ou arrastando, escolhendo o tipo: cartão de ponto ou holerite
+- **Exemplos prontos**: um clique carrega um cartão de ponto ou um holerite de exemplo, para testar sem ter um documento à mão
 - **Validação do arquivo** pela assinatura binária do PDF, não pela extensão
 - **OCR automático** nas páginas escaneadas, decidido página a página
 - **Incerteza por caractere**: o que o OCR leu com baixa confiança vira `?` (`10:35` → `??:??`)
@@ -42,6 +43,7 @@ O princípio que guia o projeto: **nunca inventar um valor**. Quando um caracter
 - **Download em `.xlsx`, `.csv` ou `.json`** já com as correções; alterações pendentes são salvas antes do download
 - **Holerite transposto**: a lista vertical de verbas de cada página vira uma matriz, com uma coluna por verba
 - **Limpeza automática** dos arquivos órfãos a cada inicialização
+- **Tema claro e escuro**, seguindo a preferência do sistema
 
 ## Como funciona
 
@@ -83,7 +85,7 @@ flowchart TD
 | Leitura de PDF | pdfplumber (pdfminer.six, pypdfium2) |
 | OCR | Tesseract com o pacote de português, via pytesseract; Pillow |
 | Planilhas | openpyxl e os módulos `csv` e `json` da biblioteca padrão |
-| Frontend | React 19, Vite 8, ESLint |
+| Frontend | React 19, Vite 8, ESLint, fonte Geist e ícones Phosphor |
 | Infraestrutura | Docker (build em dois estágios), Docker Compose |
 | Testes e CI | pytest, ruff, GitHub Actions |
 
@@ -246,7 +248,10 @@ Para atualizar: `git pull && docker compose up -d --build`.
 │   ├── extrator_holerite.py    extrator de holerite
 │   └── planilha.py             geração de xlsx, csv e json, com os avisos
 ├── frontend/src/
-│   ├── App.jsx                 envio, acompanhamento, salvar e baixar
+│   ├── App.jsx                 estado da tela: envio, acompanhamento, salvar e baixar
+│   ├── Envio.jsx               escolha do arquivo e do tipo, com os exemplos
+│   ├── Progresso.jsx           processamento e falha
+│   ├── Revisao.jsx             barra de ações e o painel de revisão
 │   ├── Tabela.jsx              tabela editável
 │   ├── Documento.jsx           PDF original ao lado
 │   └── regrasTabela.js         colunas e avisos, espelhando o backend

@@ -1,111 +1,183 @@
+/*
+ * Base da interface: cores, tipografia e o reset mínimo. Os componentes ficam
+ * no App.css e só usam as variáveis daqui, então o modo escuro é uma troca de
+ * valores neste arquivo e mais nada.
+ */
+
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+  /*
+   * Estas três cores são as mesmas do backend/planilha.py e não podem mudar
+   * só aqui: a tela precisa bater com o arquivo baixado.
+   *   #0B5D57  cabeçalho da planilha e cor da marca
+   *   #FFF3CD  linha amarela, "a conferir"
+   *   #F8D7DA  linha vermelha, com borda esquerda #DC3545
+   */
+  --marca: #0b5d57;
+  --marca-texto: #0b5d57;
+  --botao: #0b5d57;
+  --botao-hover: #094d48;
+  --sobre-marca: #f4fbf9;
+  --marca-suave: #e3f0ed;
+  --marca-borda: #a9cdc6;
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+  --amarelo: #fff3cd;
+  --amarelo-texto: #5f4f0e;
+  --amarelo-borda: #e9d58f;
+  --vermelho: #f8d7da;
+  --vermelho-texto: #7a2230;
+  --vermelho-borda: #dc3545;
+  --verde-texto: #156a45;
+  --verde-suave: #e2f3ea;
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
+  /* Neutros puxados pro verde da marca, pra nada parecer cinza de template. */
+  --fundo: #f4f6f5;
+  --superficie: #fcfdfc;
+  --superficie-2: #eef2f1;
+  --borda: #dbe2e0;
+  --borda-forte: #c3ceca;
+  --texto: #14201e;
+  --texto-2: #4c5c59;
+  --texto-3: #627270;
+
+  --sombra-1: 0 1px 2px rgb(20 52 47 / 0.06);
+  --sombra-2: 0 1px 2px rgb(20 52 47 / 0.05), 0 8px 24px -8px rgb(20 52 47 / 0.14);
+
+  --sans: 'Geist Variable', system-ui, 'Segoe UI', sans-serif;
+  --mono: 'Geist Mono Variable', ui-monospace, Consolas, monospace;
+
+  --raio: 14px;
+  --raio-pequeno: 8px;
+
+  /* Altura mínima de alvo tocável. 44px é o piso recomendado pra dedo. */
+  --alvo: 2.75rem;
+  --altura-topo: 3.75rem;
+
+  --curva: cubic-bezier(0.16, 1, 0.3, 1);
+
+  color-scheme: light;
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--texto);
+  background: var(--fundo);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
+    color-scheme: dark;
 
-  #social .button-icon {
-    filter: invert(1) brightness(2);
+    /*
+     * A marca clareia no escuro: o #0B5D57 como texto sobre fundo escuro
+     * ficaria ilegível. Como fundo (cabeçalho da tabela, botão principal) ele
+     * continua o mesmo, que é o que liga a tela à planilha.
+     */
+    --marca-texto: #6fd0c2;
+    --botao: #0f6f67;
+    --botao-hover: #137b72;
+    --marca-suave: rgb(111 208 194 / 0.1);
+    --marca-borda: rgb(111 208 194 / 0.35);
+
+    /*
+     * As faixas de aviso não ficam literais no escuro: um #FFF3CD sobre fundo
+     * quase preto ofusca e apaga o texto da linha. Viram o mesmo matiz
+     * misturado ao fundo, e o motivo escrito continua ao lado. Opacas de
+     * propósito: as colunas presas da tabela herdam esta cor e passam por
+     * cima das outras ao rolar, então uma cor translúcida deixaria ver o que
+     * está embaixo.
+     */
+    --amarelo: #323324;
+    --amarelo-texto: #f3d77e;
+    --amarelo-borda: rgb(255 214 102 / 0.35);
+    --vermelho: #342627;
+    --vermelho-texto: #f4a3ab;
+    --vermelho-borda: #e8636f;
+    --verde-texto: #7fd5a6;
+    --verde-suave: rgb(127 213 166 / 0.12);
+
+    --fundo: #0d1312;
+    --superficie: #131b1a;
+    --superficie-2: #1a2422;
+    --borda: #26322f;
+    --borda-forte: #34433f;
+    --texto: #e5edeb;
+    --texto-2: #a3b3af;
+    --texto-3: #82938f;
+
+    --sombra-1: 0 1px 2px rgb(0 0 0 / 0.4);
+    --sombra-2: 0 1px 2px rgb(0 0 0 / 0.4), 0 12px 32px -12px rgb(0 0 0 / 0.6);
   }
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 body {
   margin: 0;
-}
-
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
+  min-height: 100dvh;
 }
 
 h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
-
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
+h2,
+h3,
 p {
   margin: 0;
 }
 
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
+h1,
+h2,
+h3 {
+  color: var(--texto);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
 }
 
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+a {
+  color: var(--marca-texto);
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+/*
+ * Anel de foco único pra tudo que recebe teclado. Usa :focus-visible pra
+ * aparecer em quem navega por teclado sem piscar a cada clique de mouse.
+ */
+:where(button, a, input, select, label):focus-visible {
+  outline: 2px solid var(--marca-texto);
+  outline-offset: 2px;
+}
+
+/* Some da tela mas continua pro leitor de tela e pro teclado. */
+.so-leitor {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

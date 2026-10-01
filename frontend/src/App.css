@@ -1,536 +1,923 @@
 /*
- * O index.css do template deixa o #root com largura fixa, borda nas laterais
- * e texto centralizado. Aqui a página é um formulário, então desfaz isso e
- * mantém só as variáveis de cor, que já trazem o modo escuro de graça.
+ * Componentes da tela. As cores e medidas vêm todas do index.css; aqui só se
+ * decide onde cada uma vai.
+ *
+ * Regra de cantos: caixa grande (cartão, área da revisão) usa --raio; o que
+ * se clica ou se digita (botão, campo, opção) usa --raio-pequeno; etiqueta é
+ * pílula.
  */
-#root {
-  width: 100%;
-  max-width: none;
-  text-align: left;
-  border-inline: none;
+
+/*
+ * Topo, conteúdo e rodapé dividem a mesma largura, pra marca, título e
+ * rodapé começarem na mesma linha vertical. Na revisão ela abre quase de
+ * ponta a ponta: tabela e PDF lado a lado precisam do espaço.
+ */
+.app {
+  --largura: 72rem;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
 }
 
-:root {
-  /*
-   * As quatro cores abaixo são as mesmas do backend/planilha.py e não podem
-   * mudar só aqui: a tela precisa bater com o arquivo baixado.
-   *   #0B5D57  cabeçalho (texto branco negrito por cima)
-   *   #FFF3CD  destaque amarelo, "a conferir"
-   *   #F8D7DA  destaque vermelho, com borda esquerda #DC3545
-   */
-  --marca: #0b5d57;
-  --amarelo: #fff3cd;
-  --vermelho: #f8d7da;
-  --borda-vermelha: #dc3545;
-
-  /* Tons de texto das faixas coloridas, escuros o bastante pra manter
-     contraste de leitura sobre o amarelo e o vermelho claros. */
-  --texto-amarelo: #6b5b16;
-  --texto-vermelho: #7a2532;
-  --borda-amarela: #e8d9a0;
-
-  /*
-   * Escala de espaçamento. Ter os degraus nomeados evita o ritmo vertical
-   * virar uma coleção de valores avulsos, que é o que faz uma tela parecer
-   * desalinhada sem que se saiba apontar onde.
-   */
-  --e1: 0.25rem;
-  --e2: 0.5rem;
-  --e3: 0.75rem;
-  --e4: 1rem;
-  --e5: 1.5rem;
-  --e6: 2rem;
-  --e7: 3rem;
-
-  --raio: 10px;
-  --raio-pequeno: 6px;
-
-  --sombra-carta: 0 1px 2px rgba(16, 24, 40, 0.04),
-    0 1px 3px rgba(16, 24, 40, 0.06);
-
-  /*
-   * Realce de hover, derivado da cor da marca. O template do Vite traz um
-   * --accent roxo que não tem nada a ver com esta tela: usá-lo faria cada
-   * passagem de mouse acender uma cor que não existe em lugar nenhum do
-   * documento nem da planilha.
-   */
-  --realce-fundo: rgba(11, 93, 87, 0.06);
-  --realce-borda: rgba(11, 93, 87, 0.35);
-
-  /* Altura mínima de alvo tocável. 44px é o piso recomendado pra dedo. */
-  --alvo: 2.75rem;
+.app.amplo {
+  --largura: 100rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    /* Só a cor da marca clareia: sobre fundo escuro, o #0B5D57 original
-       ficaria ilegível como texto. As faixas de destaque seguem literais. */
-    --marca: #5cc3b6;
-    --sombra-carta: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.25);
-    /* O realce acompanha o tom claro: sobre fundo escuro, o tom original
-       some e a passagem de mouse deixaria de ser visível. */
-    --realce-fundo: rgba(92, 195, 182, 0.12);
-    --realce-borda: rgba(92, 195, 182, 0.45);
-  }
+/* ---------------------------------------------------------------- topo */
+
+.topo {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  height: var(--altura-topo);
+  border-bottom: 1px solid var(--borda);
+  background: color-mix(in srgb, var(--fundo) 88%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
-.pagina {
-  max-width: 62rem;
+.topo-conteudo {
+  height: 100%;
+  max-width: calc(var(--largura) + 3rem);
   margin: 0 auto;
-  padding: var(--e6) var(--e5) var(--e7);
-  box-sizing: border-box;
-  /*
-   * O width: 100% nao e redundante com o max-width.
-   *
-   * O #root do template e um flex column, entao a largura da pagina e o eixo
-   * cruzado - e o "margin: 0 auto" daqui de cima cancela o stretch que o flex
-   * daria por padrao. Sem largura declarada, a pagina passa a se dimensionar
-   * pelo conteudo e fica MAIOR que a janela numa tela estreita, jogando
-   * rolagem horizontal na pagina inteira em vez de rolar dentro da tabela.
-   *
-   * O min-width: 0 fecha o outro lado do mesmo problema: flex item nasce com
-   * min-width auto e voltaria a crescer se algum conteudo tivesse min-content
-   * maior que a janela.
-   */
-  width: 100%;
-  min-width: 0;
+  padding: 0 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
 }
 
-/*
- * Com o resultado na tela a página abre, pra tabela e PDF caberem lado a lado
- * sem se espremerem. Continua com limite: numa tela muito larga, uma linha de
- * texto que atravessa o monitor inteiro fica pior de ler, não melhor.
- */
-.pagina.ampla {
-  max-width: 96rem;
-}
-
-/*
- * Anel de foco único pra tudo que recebe teclado. Usa :focus-visible pra
- * aparecer em quem navega por teclado sem piscar a cada clique de mouse.
- */
-:where(button, select, a, input):focus-visible {
-  outline: 2px solid var(--marca);
-  outline-offset: 2px;
+.marca {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 650;
+  font-size: 1.05rem;
+  letter-spacing: -0.015em;
+  color: var(--texto);
+  text-decoration: none;
   border-radius: var(--raio-pequeno);
 }
 
-/* --------------------------------------------------------- cabeçalho */
-
-.cabecalho h1 {
-  /* Cresce com a janela, mas com piso e teto: em 390px um título de 2rem
-     quebra em três linhas e come a primeira dobra. */
-  font-size: clamp(1.5rem, 1.1rem + 2vw, 2rem);
-  line-height: 1.15;
-  letter-spacing: -0.02em;
-  margin: 0 0 var(--e2);
-  color: var(--marca);
-  text-wrap: balance;
+.marca img {
+  display: block;
+  border-radius: 7px;
 }
 
-.cabecalho p {
-  margin: 0 0 var(--e6);
-  max-width: 46ch;
-}
-
-/* ---------------------------------------------------------------- form */
-
-.formulario {
+.topo-acoes {
   display: flex;
-  flex-direction: column;
-  gap: var(--e5);
-  padding: var(--e5);
-  border: 1px solid var(--border);
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* ------------------------------------------------------------- conteúdo */
+
+.conteudo {
+  flex: 1;
+  width: 100%;
+  max-width: calc(var(--largura) + 3rem);
+  margin: 0 auto;
+  padding: 4rem 1.5rem 5rem;
+}
+
+.amplo .conteudo {
+  padding: 1.5rem 1.5rem 2rem;
+}
+
+/* ------------------------------------------------------------- abertura */
+
+.abertura {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 28rem);
+  gap: 4rem;
+  align-items: center;
+  animation: surgir 0.5s var(--curva) both;
+}
+
+.abertura-texto h1 {
+  font-size: clamp(2.1rem, 1.2rem + 2.6vw, 3.1rem);
+  line-height: 1.06;
+  letter-spacing: -0.035em;
+  max-width: 13em;
+}
+
+.abertura-texto p {
+  margin-top: 1.25rem;
+  font-size: 1.125rem;
+  line-height: 1.55;
+  color: var(--texto-2);
+  max-width: 38ch;
+  text-wrap: pretty;
+}
+
+/* --------------------------------------------------------------- cartão */
+
+.cartao {
+  position: relative;
+  background: var(--superficie);
+  border: 1px solid var(--borda);
   border-radius: var(--raio);
-  background: var(--social-bg);
-  box-shadow: var(--sombra-carta);
-}
-
-.campo {
+  box-shadow: var(--sombra-2);
+  padding: 1.5rem;
   display: flex;
   flex-direction: column;
-  gap: var(--e2);
+  gap: 1.25rem;
+  min-width: 0;
+  animation: surgir 0.35s var(--curva) both;
+}
+
+/* Zona de arquivo: clique ou arraste. O input fica escondido mas recebe o
+   foco, e o anel aparece na zona inteira. */
+.zona {
+  border: 1.5px dashed var(--borda-forte);
+  border-radius: var(--raio-pequeno);
+  background: var(--superficie-2);
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.zona:hover,
+.zona.arrastando {
+  border-color: var(--marca-texto);
+  background: var(--marca-suave);
+}
+
+.zona:focus-within {
+  outline: 2px solid var(--marca-texto);
+  outline-offset: 2px;
+}
+
+.zona.preenchida {
+  border-style: solid;
+  border-color: var(--borda);
+  background: var(--superficie-2);
+}
+
+.zona-convite {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 1.75rem 1rem;
+  text-align: center;
+  cursor: pointer;
+}
+
+.zona-icone {
+  display: grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  margin-bottom: 0.25rem;
+  border-radius: 999px;
+  background: var(--superficie);
+  border: 1px solid var(--borda);
+  color: var(--marca-texto);
+}
+
+.zona-texto {
+  font-size: 0.95rem;
+  color: var(--texto-2);
+}
+
+.zona-texto strong {
+  color: var(--marca-texto);
+  font-weight: 600;
+}
+
+.zona-dica {
+  font-size: 0.8rem;
+  color: var(--texto-3);
+}
+
+.arquivo-escolhido {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0.6rem 0.7rem 0.85rem;
+  min-width: 0;
+}
+
+.arquivo-escolhido.estatico {
+  border-radius: var(--raio-pequeno);
+  background: var(--superficie-2);
+  border: 1px solid var(--borda);
+}
+
+.arquivo-icone {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--raio-pequeno);
+  background: var(--marca-suave);
+  color: var(--marca-texto);
+}
+
+.arquivo-dados {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+
+.arquivo-dados strong {
+  font-weight: 550;
+  font-size: 0.95rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.arquivo-dados span {
+  font-size: 0.8rem;
+  color: var(--texto-3);
+}
+
+/* Tipo de documento: duas opções lado a lado, radio escondido. */
+.tipos {
   border: 0;
   padding: 0;
   margin: 0;
   min-width: 0;
 }
 
-.campo > label,
-.campo legend {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--text-h);
-  letter-spacing: 0.01em;
+.tipos legend {
   padding: 0;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 550;
+  color: var(--texto);
 }
 
-.campo:disabled {
+.tipos-opcoes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.tipo {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 0.6rem;
+  row-gap: 0.1rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--borda);
+  border-radius: var(--raio-pequeno);
+  background: var(--superficie);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.tipo svg {
+  grid-row: span 2;
+  margin-top: 0.1rem;
+  color: var(--texto-3);
+}
+
+.tipo:hover {
+  border-color: var(--borda-forte);
+}
+
+.tipo.marcado {
+  border-color: var(--marca-texto);
+  background: var(--marca-suave);
+  box-shadow: inset 0 0 0 1px var(--marca-texto);
+}
+
+.tipo.marcado svg {
+  color: var(--marca-texto);
+}
+
+.tipo:focus-within {
+  outline: 2px solid var(--marca-texto);
+  outline-offset: 2px;
+}
+
+.tipo-rotulo {
+  font-size: 0.95rem;
+  font-weight: 550;
+}
+
+.tipo-dica {
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: var(--texto-3);
+}
+
+.tipos:disabled .tipo {
   opacity: 0.55;
+  cursor: not-allowed;
 }
 
-input[type='file'] {
-  font: inherit;
-  font-size: 0.95rem;
-  color: inherit;
-  max-width: 100%;
-  padding: var(--e2) 0;
-}
-
-/* O seletor de arquivo é o primeiro clique da tela: ganha a mesma aparência
-   de botão secundário em vez do padrão cru do navegador. */
-input[type='file']::file-selector-button {
-  font: inherit;
-  font-size: 0.9rem;
-  margin-right: var(--e3);
-  padding: var(--e2) var(--e4);
-  min-height: var(--alvo);
-  border: 1px solid var(--border);
+.erro-campo {
+  padding: 0.6rem 0.8rem;
   border-radius: var(--raio-pequeno);
-  background: var(--bg);
-  color: var(--text-h);
-  cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  border: 1px solid var(--vermelho-borda);
+  background: var(--vermelho);
+  color: var(--vermelho-texto);
+  font-size: 0.875rem;
+  font-weight: 500;
 }
 
-input[type='file']:hover::file-selector-button {
-  background: var(--realce-fundo);
-  border-color: var(--realce-borda);
-}
-
-.opcao {
+.exemplos {
   display: flex;
-  align-items: center;
-  gap: var(--e2);
-  font-size: 0.95rem;
-  cursor: pointer;
-  /* Alvo tocável: a linha inteira do rótulo responde ao dedo, não só o
-     círculo do radio. */
-  min-height: var(--alvo);
-  padding: 0 var(--e1);
-  margin-left: calc(var(--e1) * -1);
-  border-radius: var(--raio-pequeno);
-  transition: background-color 0.15s ease;
-}
-
-.opcao:hover {
-  background: var(--realce-fundo);
-}
-
-.opcao input {
-  /* Radio maior, também por causa do toque. */
-  width: 1.05rem;
-  height: 1.05rem;
-  accent-color: var(--marca);
-  cursor: pointer;
-}
-
-.acoes {
-  display: flex;
-  gap: var(--e3);
   flex-wrap: wrap;
   align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem 0.75rem;
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--borda);
+  font-size: 0.85rem;
+  color: var(--texto-2);
 }
 
-button {
-  font: inherit;
-  font-size: 0.95rem;
-  font-weight: 500;
-  padding: var(--e2) var(--e5);
-  min-height: var(--alvo);
+.exemplos-botoes {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.exemplos-botoes .botao.fantasma {
+  border-color: var(--borda);
+  color: var(--marca-texto);
+}
+
+.exemplos-botoes .botao.fantasma:hover:not(:disabled) {
+  border-color: var(--marca-borda);
+  background: var(--marca-suave);
+  color: var(--marca-texto);
+}
+
+.nota {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-top: -0.25rem;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--texto-3);
+}
+
+.nota svg {
+  flex: none;
+  margin-top: 0.1rem;
+}
+
+/* ------------------------------------------------------------- botões */
+
+.botao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.5rem;
+  padding: 0 1rem;
   border: 1px solid transparent;
   border-radius: var(--raio-pequeno);
-  background: var(--marca);
-  color: #fff;
+  background: transparent;
+  font-size: 0.925rem;
+  font-weight: 550;
+  line-height: 1;
+  white-space: nowrap;
+  text-decoration: none;
   cursor: pointer;
-  transition: filter 0.15s ease, box-shadow 0.15s ease,
-    background-color 0.15s ease, transform 0.05s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease,
+    color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
 }
 
-button:hover:not(:disabled) {
-  filter: brightness(1.15);
-  box-shadow: var(--sombra-carta);
-}
-
-/* Afunda 1px no clique: devolve resposta física ao toque, que no celular é
-   o único retorno que existe (não há hover). */
-button:active:not(:disabled) {
+/* Afunda 1px no clique: no celular é o único retorno físico que existe. */
+.botao:active:not(:disabled) {
   transform: translateY(1px);
 }
 
-button:disabled {
+.botao:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-button.secundario {
-  background: transparent;
-  color: var(--text-h);
-  border-color: var(--border);
+.botao.primario {
+  background: var(--botao);
+  color: var(--sobre-marca);
+  box-shadow: var(--sombra-1), inset 0 1px 0 rgb(255 255 255 / 0.1);
 }
 
-button.secundario:hover:not(:disabled) {
-  filter: none;
-  background: var(--realce-fundo);
-  border-color: var(--realce-borda);
+.botao.primario:hover:not(:disabled) {
+  background: var(--botao-hover);
 }
 
-/* ------------------------------------------------------------- avisos */
-
-.aviso {
-  display: flex;
-  align-items: center;
-  gap: var(--e3);
-  margin-top: var(--e5);
-  padding: var(--e4) var(--e5);
-  border-radius: var(--raio);
-  border: 1px solid var(--border);
+.botao.secundario {
+  background: var(--superficie);
+  border-color: var(--borda-forte);
+  color: var(--texto);
 }
 
-.aviso strong {
-  color: var(--text-h);
-  font-size: 0.95rem;
+.botao.secundario:hover:not(:disabled) {
+  background: var(--superficie-2);
 }
 
-.aviso.processando {
-  background: var(--amarelo);
-  border-color: var(--borda-amarela);
-  color: var(--texto-amarelo);
+.botao.fantasma {
+  color: var(--texto-2);
 }
 
-.aviso.processando strong {
-  color: var(--texto-amarelo);
+.botao.fantasma:hover:not(:disabled) {
+  background: var(--superficie-2);
+  color: var(--texto);
 }
 
-.aviso.falha {
-  background: var(--vermelho);
-  border-color: var(--borda-vermelha);
-  border-left-width: 4px;
-  color: var(--texto-vermelho);
-  display: block;
+.botao.largo {
+  width: 100%;
+  min-height: var(--alvo);
+  font-size: 1rem;
 }
 
-.aviso.falha strong {
-  color: var(--texto-vermelho);
-}
-
-.detalhe {
+.botao.pequeno {
+  min-height: 2rem;
+  padding: 0 0.6rem;
   font-size: 0.85rem;
-  line-height: 1.5;
-  margin: var(--e1) 0 0;
-  opacity: 0.85;
 }
 
-.girando {
+.botao.icone-so {
+  width: 2rem;
+  min-height: 2rem;
+  padding: 0;
+}
+
+/* ----------------------------------------------------------- progresso */
+
+.progresso {
+  overflow: hidden;
+}
+
+.fases {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.fase {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: start;
+  font-size: 0.95rem;
+  color: var(--texto-3);
+}
+
+.fase > span:nth-child(2) {
+  display: flex;
+  flex-direction: column;
+}
+
+.fase small {
+  margin-top: 0.15rem;
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--texto-3);
+}
+
+.fase.feita {
+  color: var(--texto-2);
+}
+
+.fase.feita svg {
+  color: var(--verde-texto);
+}
+
+.fase.atual {
+  color: var(--texto);
+  font-weight: 550;
+}
+
+.fase.atual svg {
+  color: var(--marca-texto);
+}
+
+.relogio {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--texto-2);
+}
+
+.gira {
+  animation: girar 0.9s linear infinite;
+}
+
+/* Faixa correndo na base do cartão enquanto o servidor trabalha. */
+.faixa-andamento {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  overflow: hidden;
+}
+
+.faixa-andamento::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, var(--marca-texto), transparent);
+  animation: correr 1.6s ease-in-out infinite;
+}
+
+.falha-corpo {
+  display: flex;
+  gap: 0.75rem;
+  color: var(--vermelho-texto);
+}
+
+.falha-corpo svg {
   flex: none;
-  width: 1.15rem;
-  height: 1.15rem;
-  border: 2px solid rgba(107, 91, 22, 0.25);
-  border-top-color: var(--texto-amarelo);
-  border-radius: 50%;
-  animation: girar 0.8s linear infinite;
+  margin-top: 0.1rem;
 }
 
-@keyframes girar {
-  to {
-    transform: rotate(360deg);
-  }
+.falha-corpo strong {
+  color: var(--texto);
+  font-weight: 600;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .girando {
-    animation-duration: 3s;
-  }
-
-  * {
-    transition-duration: 0.01ms !important;
-  }
+.falha-corpo p {
+  margin-top: 0.25rem;
+  font-size: 0.9rem;
+  color: var(--texto-2);
 }
 
-/* ----------------------------------------------------------- resultado */
+/* ------------------------------------------------------------- explica */
 
-.resultado {
-  margin-top: var(--e7);
-  /* Linha divisória: separa o formulário do resultado sem precisar de mais
-     um cartão dentro do outro. */
-  border-top: 1px solid var(--border);
-  padding-top: var(--e5);
+.explica {
+  margin-top: 6rem;
+  padding-top: 3.5rem;
+  border-top: 1px solid var(--borda);
+  animation: surgir 0.6s 0.1s var(--curva) both;
 }
 
-.resultado h2 {
-  font-size: 1.25rem;
-  letter-spacing: -0.01em;
-  margin: 0 0 var(--e1);
-  color: var(--text-h);
+.explica-texto {
+  max-width: 40rem;
+}
+
+.explica-texto h2 {
+  font-size: clamp(1.5rem, 1.2rem + 1vw, 1.9rem);
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+}
+
+.explica-texto p {
+  margin-top: 0.9rem;
+  font-size: 1.025rem;
+  line-height: 1.65;
+  color: var(--texto-2);
+}
+
+.marca-amarela,
+.marca-vermelha {
+  padding: 0.05em 0.35em;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.marca-amarela {
+  background: var(--amarelo);
+  color: var(--amarelo-texto);
+}
+
+.marca-vermelha {
+  background: var(--vermelho);
+  color: var(--vermelho-texto);
+}
+
+.explica-amostra {
+  margin: 2rem 0 0;
+}
+
+.amostra {
+  border: 1px solid var(--borda);
+  border-radius: var(--raio);
+  box-shadow: var(--sombra-2);
+  background: var(--superficie);
+}
+
+.explica-amostra figcaption {
+  margin-top: 0.7rem;
+  font-size: 0.8rem;
+  color: var(--texto-3);
+}
+
+/* ------------------------------------------------------------- revisão */
+
+.revisao {
+  animation: surgir 0.4s var(--curva) both;
+}
+
+.revisao-barra {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.revisao-titulo {
+  min-width: 0;
+}
+
+.revisao-titulo h1 {
+  font-size: 1.4rem;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.revisao-titulo p {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+  font-size: 0.9rem;
+  color: var(--texto-2);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--marca-borda);
+  background: var(--marca-suave);
+  color: var(--marca-texto);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.revisao-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.estado {
+  font-size: 0.85rem;
+  font-weight: 550;
+  margin-right: 0.25rem;
+}
+
+.estado-pendente,
+.estado-salvo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.estado-pendente {
+  color: var(--amarelo-texto);
+}
+
+.estado-salvo {
+  color: var(--verde-texto);
+}
+
+/* Formato do download como seletor segmentado: as três opções à vista. */
+.formatos {
+  display: inline-flex;
+  gap: 2px;
+  margin: 0;
+  padding: 3px;
+  min-width: 0;
+  border: 1px solid var(--borda-forte);
+  border-radius: var(--raio-pequeno);
+  background: var(--superficie);
+}
+
+.formatos label {
+  display: inline-flex;
+  align-items: center;
+  min-height: calc(2.5rem - 8px);
+  padding: 0 0.7rem;
+  border-radius: 5px;
+  font-family: var(--mono);
+  font-size: 0.825rem;
+  color: var(--texto-2);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.formatos label:hover {
+  color: var(--texto);
+}
+
+.formatos label.marcado {
+  background: var(--marca-suave);
+  color: var(--marca-texto);
+  font-weight: 600;
+}
+
+.formatos label:focus-within {
+  outline: 2px solid var(--marca-texto);
+  outline-offset: 1px;
+}
+
+.formatos:disabled label {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.alerta {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--raio-pequeno);
+  border: 1px solid var(--vermelho-borda);
+  background: var(--vermelho);
+  color: var(--vermelho-texto);
+}
+
+.alerta svg {
+  flex: none;
+  margin-top: 0.1rem;
+}
+
+.alerta p {
+  font-size: 0.9rem;
 }
 
 /* ------------------------------------------- tabela + documento lado a lado */
 
 /*
- * Duas colunas de mesma largura: a tabela de um lado, o PDF do outro.
+ * Duas colunas ocupando a altura que sobra da janela: a tabela de um lado, o
+ * PDF do outro, cada um rolando por dentro.
  *
- * O minmax(0, 1fr) não é enfeite. O padrão de uma coluna de grid é min-width
+ * O minmax(0, ...) não é enfeite. O padrão de uma coluna de grid é min-width
  * auto, que a faz crescer até caber o conteúdo - e a tabela do holerite passa
- * de 40 colunas. Sem o minmax(0, ...) ela empurraria a grade inteira e a
- * página ganharia rolagem horizontal, em vez de rolar dentro da .rolagem.
+ * de 40 colunas. Sem ele ela empurraria a grade inteira e a página ganharia
+ * rolagem horizontal, em vez de rolar dentro da .rolagem.
  */
 .painel {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: var(--e5);
-  align-items: start;
-  margin-top: var(--e4);
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 1.25rem;
+  height: calc(100dvh - var(--altura-topo) - 9rem);
+  min-height: 32rem;
 }
 
-/*
- * Até 64rem as duas colunas ficam estreitas demais pra qualquer uma das duas
- * servir, então elas viram uma só, empilhadas. A tabela vem primeiro por ser
- * onde se edita; o PDF fica logo abaixo, a uma rolagem de distância.
- */
-@media (max-width: 64rem) {
-  .painel {
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--e6);
-  }
-}
-
-/* ----------------------------------------------------------- documento */
-
-.documento-area {
+.area {
   display: flex;
   flex-direction: column;
-  /* Sem isso, o iframe (que é substituído e tem largura própria) ignora a
-     coluna e vaza pra fora dela. */
   min-width: 0;
-}
-
-.documento-topo,
-.resumo {
-  display: flex;
-  align-items: center;
-  gap: var(--e2);
-  flex-wrap: wrap;
-  font-size: 0.85rem;
-  margin-bottom: var(--e2);
-  /* As duas barras têm a mesma altura pra tabela e PDF começarem alinhados
-     na mesma linha quando estão lado a lado. */
-  min-height: 2rem;
-}
-
-.documento-topo {
-  justify-content: space-between;
-}
-
-.documento-topo span,
-.resumo > span:first-child {
-  font-weight: 600;
-  color: var(--text-h);
-  letter-spacing: 0.01em;
-}
-
-.documento-topo a {
-  color: var(--marca);
-  text-decoration: none;
-  padding: var(--e1) var(--e2);
-  border-radius: var(--raio-pequeno);
-  transition: background-color 0.15s ease;
-}
-
-.documento-topo a:hover {
-  background: var(--realce-fundo);
-  text-decoration: underline;
-}
-
-/* A mesma altura da .rolagem, pra tabela e documento terminarem juntos. */
-.documento-visor {
-  width: 100%;
-  height: 34rem;
-  border: 1px solid var(--border);
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--borda);
   border-radius: var(--raio);
-  background: var(--surface, #fff);
-  /*
-   * Sem o border-box, a borda soma 2px por cima dos 100% e o visor fica mais
-   * largo que a coluna. Num iframe isso nao passa despercebido: os 2px viram
-   * largura minima, sobem por toda a arvore e a pagina inteira ganha rolagem
-   * horizontal no celular.
-   */
-  box-sizing: border-box;
-  box-shadow: var(--sombra-carta);
+  background: var(--superficie);
+  box-shadow: var(--sombra-1);
 }
 
-@media (max-width: 64rem) {
-  /* Empilhado, o visor divide a tela com a tabela em vez de ficar ao lado:
-     encurta pra que a tabela continue visível ao rolar. */
-  .documento-visor {
-    height: 26rem;
-  }
+/* As duas barras têm a mesma altura pra tabela e PDF começarem alinhados. */
+.area-topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-height: 3rem;
+  padding: 0.5rem 0.6rem 0.5rem 1rem;
+  border-bottom: 1px solid var(--borda);
 }
 
-/* -------------------------------------------------------------- tabela */
+.area-titulo {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
 
-.tabela-area {
-  /* Sem margem no topo: quem espaça do texto acima é o .painel, e uma margem
-     aqui desceria só esta coluna, desalinhando a tabela do PDF ao lado. */
-  min-width: 0;
+.area-sub {
+  font-weight: 400;
+  color: var(--texto-3);
+}
+
+.etiquetas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
 }
 
 .etiqueta {
-  padding: var(--e1) var(--e3);
+  padding: 0.15rem 0.6rem;
   border-radius: 999px;
-  border: 1px solid var(--border);
+  border: 1px solid transparent;
   font-size: 0.78rem;
   font-weight: 600;
-  letter-spacing: 0.01em;
   white-space: nowrap;
 }
 
 .etiqueta.amarelo {
   background: var(--amarelo);
-  border-color: var(--borda-amarela);
-  color: var(--texto-amarelo);
+  border-color: var(--amarelo-borda);
+  color: var(--amarelo-texto);
 }
 
 .etiqueta.vermelho {
   background: var(--vermelho);
-  border-color: var(--borda-vermelha);
-  color: var(--texto-vermelho);
+  border-color: var(--vermelho-borda);
+  color: var(--vermelho-texto);
 }
 
-/* A tabela é larga (o holerite passa de 40 colunas): rola dentro da caixa
-   em vez de esticar a página. */
+.etiqueta.ok {
+  background: var(--verde-suave);
+  color: var(--verde-texto);
+}
+
+.link-acao {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: var(--raio-pequeno);
+  font-size: 0.85rem;
+  font-weight: 550;
+  text-decoration: none;
+  transition: background-color 0.15s ease;
+}
+
+.link-acao:hover {
+  background: var(--marca-suave);
+}
+
+.documento-visor {
+  flex: 1;
+  display: block;
+  width: 100%;
+  min-height: 0;
+  border: 0;
+  background: var(--superficie-2);
+}
+
+/*
+ * Até 64rem as duas colunas ficam estreitas demais pra qualquer uma servir,
+ * então elas viram uma só, empilhadas. A tabela vem primeiro por ser onde se
+ * edita; o PDF fica logo abaixo, a uma rolagem de distância.
+ */
+@media (max-width: 64rem) {
+  .painel {
+    grid-template-columns: minmax(0, 1fr);
+    height: auto;
+    min-height: 0;
+  }
+
+  .tabela-area .rolagem {
+    max-height: 65vh;
+  }
+
+  .documento-visor {
+    flex: none;
+    height: 75vh;
+  }
+}
+
+/* -------------------------------------------------------------- tabela */
+
+/* A tabela é larga (o holerite passa de 40 colunas): rola dentro da área em
+   vez de esticar a página. */
 .rolagem {
-  max-height: 34rem;
+  flex: 1;
+  min-height: 0;
   overflow: auto;
-  border: 1px solid var(--border);
-  border-radius: var(--raio);
-  box-shadow: var(--sombra-carta);
   /* Chegando ao fim da rolagem, o gesto para aqui em vez de continuar
-     rolando a página atrás - no celular isso é a diferença entre navegar a
-     tabela e perder o lugar da leitura. */
+     rolando a página atrás: no celular é a diferença entre navegar a tabela
+     e perder o lugar da leitura. */
   overscroll-behavior: contain;
 }
 
 .tabela {
   border-collapse: separate;
   border-spacing: 0;
-  font-size: 0.85rem;
   width: max-content;
   min-width: 100%;
+  font-size: 0.85rem;
 }
 
+/* O cabeçalho é a mesma faixa verde da planilha baixada. */
 .tabela th {
   position: sticky;
   top: 0;
   z-index: 2;
+  padding: 0.6rem 0.75rem;
   background: var(--marca);
-  color: #fff;
-  font-weight: 700;
+  color: var(--sobre-marca);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
   text-align: left;
-  white-space: nowrap;
-  padding: var(--e3);
-  font-size: 0.78rem;
-  letter-spacing: 0.03em;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 /*
@@ -538,12 +925,13 @@ button.secundario:hover:not(:disabled) {
  * saber mais de que linha ela é torna a conferência impossível: a Data (ou a
  * Pág.) precisa continuar à vista.
  *
- * O background: inherit é o que mantém as cores da planilha intactas - a
- * célula presa herda do <tr>, então a linha amarela continua #FFF3CD e a
- * vermelha #F8D7DA, sem cor nova nenhuma inventada aqui.
+ * O background: inherit é o que mantém as cores dos avisos intactas: a célula
+ * presa herda do <tr>, então a linha amarela continua amarela e a vermelha
+ * vermelha, sem cor nova inventada aqui. Por isso as cores de linha precisam
+ * ser opacas, senão o que passa por baixo apareceria através da célula presa.
  */
 .tabela tbody tr {
-  background: var(--bg);
+  background: var(--superficie);
 }
 
 .tabela th:first-child,
@@ -551,7 +939,7 @@ button.secundario:hover:not(:disabled) {
   position: sticky;
   left: 0;
   background: inherit;
-  border-right: 1px solid var(--border);
+  border-right: 1px solid var(--borda);
 }
 
 /*
@@ -559,7 +947,7 @@ button.secundario:hover:not(:disabled) {
  *
  * O width: 1% é o jeito de dizer isso a uma tabela: com table-layout auto o
  * navegador reparte a largura proporcionalmente entre todas as colunas, e a
- * Pág. acabava com os mesmos 183px de "IMPOSTO DE RENDA-FONTE S/FERIAS" -
+ * Pág. acabava com os mesmos 183px de "IMPOSTO DE RENDA-FONTE S/FERIAS",
  * roubando espaço justamente das colunas que têm o dado a conferir.
  */
 .tabela th:first-child,
@@ -572,7 +960,7 @@ button.secundario:hover:not(:disabled) {
 /*
  * A coluna do motivo fica presa à direita pelo mesmo motivo que a Data fica
  * presa à esquerda: é ela que diz POR QUE a linha está marcada, e a cor
- * sozinha não informa quem não a distingue. Solta, ela é a 48ª coluna - ou
+ * sozinha não informa quem não a distingue. Solta, ela é a 48ª coluna, ou
  * seja, invisível até rolar a tabela inteira, justamente para quem mais
  * precisa dela.
  */
@@ -581,7 +969,7 @@ button.secundario:hover:not(:disabled) {
   position: sticky;
   right: 0;
   background: inherit;
-  border-left: 1px solid var(--border);
+  border-left: 1px solid var(--borda);
 }
 
 .tabela td:first-child,
@@ -599,27 +987,31 @@ button.secundario:hover:not(:disabled) {
 
 .tabela td {
   padding: 0;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--borda);
 }
 
 .tabela tbody tr:last-child td {
   border-bottom: 0;
 }
 
-.tabela input {
-  font: inherit;
-  font-family: var(--mono);
-  font-size: 0.8rem;
-  /* Dígitos de mesma largura: com valores empilhados, alinha a vírgula e os
-     números batem coluna a coluna. */
-  font-variant-numeric: tabular-nums;
+.tabela input,
+.tabela .celula {
+  display: block;
   width: 100%;
-  min-width: 6.5rem;
-  box-sizing: border-box;
-  padding: var(--e2) var(--e3);
+  /* 1ch é a largura exata de um dígito na fonte mono. */
+  min-width: calc(var(--caracteres, 6) * 1ch + 1.5rem + 2px);
+  padding: 0.55rem 0.75rem;
   border: 0;
   background: transparent;
   color: inherit;
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  /* Dígitos de mesma largura: com valores empilhados, a vírgula e os números
+     batem coluna a coluna. */
+  font-variant-numeric: tabular-nums;
+}
+
+.tabela input {
   transition: box-shadow 0.12s ease;
 }
 
@@ -629,156 +1021,183 @@ button.secundario:hover:not(:disabled) {
  * a pessoa está conferindo.
  */
 .tabela input:hover:not(:focus) {
-  box-shadow: inset 0 0 0 1px var(--realce-borda);
+  box-shadow: inset 0 0 0 1px var(--marca-borda);
 }
 
 .tabela input:focus {
-  outline: 2px solid var(--marca);
-  outline-offset: -2px;
-  background: var(--bg);
   position: relative;
   z-index: 1;
+  outline: 2px solid var(--marca-texto);
+  outline-offset: -2px;
+  background: var(--superficie);
 }
 
 .tabela tbody tr.amarelo {
   background: var(--amarelo);
-  color: var(--texto-amarelo);
+  color: var(--amarelo-texto);
 }
 
 .tabela tbody tr.vermelho {
   background: var(--vermelho);
-  color: var(--texto-vermelho);
+  color: var(--vermelho-texto);
 }
 
 /* A borda esquerda vermelha da primeira célula, igual à planilha. */
 .tabela tbody tr.vermelho td:first-child {
-  box-shadow: inset 3px 0 0 var(--borda-vermelha);
+  box-shadow: inset 3px 0 0 var(--vermelho-borda);
 }
 
 /*
- * O motivo escrito, ao lado da cor. Quem não distingue as cores - ou lê por
- * leitor de tela - depende só desta coluna, então ela não encolhe nem some
- * em tela nenhuma.
+ * O motivo escrito, ao lado da cor. Quem não distingue as cores, ou lê por
+ * leitor de tela, depende só desta coluna, então ela não encolhe nem some em
+ * tela nenhuma.
  */
-.coluna-aviso {
-  padding: var(--e2) var(--e3);
-  white-space: nowrap;
+/* O td na frente é de propósito: sem ele, o padding: 0 do .tabela td vence
+   e o motivo encosta na borda da coluna. */
+.tabela td.coluna-aviso,
+.tabela th.coluna-aviso {
+  padding: 0.55rem 0.75rem;
   font-size: 0.75rem;
   font-weight: 600;
-  letter-spacing: 0.01em;
+  white-space: nowrap;
 }
 
-th.coluna-aviso {
-  background: var(--marca);
+/* ------------------------------------------------------------- rodapé */
+
+.rodape {
+  margin-top: auto;
+  border-top: 1px solid var(--borda);
 }
 
-/* -------------------------------------------------------- barra de ações */
-
-.barra-acoes {
+.rodape-conteudo {
+  max-width: calc(var(--largura) + 3rem);
+  margin: 0 auto;
+  padding: 1.25rem 1.5rem;
   display: flex;
-  align-items: center;
-  gap: var(--e3);
   flex-wrap: wrap;
-  margin-top: var(--e5);
-  padding-top: var(--e4);
-  border-top: 1px solid var(--border);
-}
-
-.grupo-download {
-  display: flex;
-  align-items: center;
-  gap: var(--e2);
-}
-
-.rotulo-formato {
+  gap: 0.5rem 1.5rem;
   font-size: 0.85rem;
+  color: var(--texto-3);
+}
+
+.rodape-conteudo span {
   font-weight: 600;
-  color: var(--text-h);
+  color: var(--texto-2);
 }
 
-select {
-  font: inherit;
-  font-size: 0.9rem;
-  padding: var(--e2) var(--e2);
-  min-height: var(--alvo);
-  border: 1px solid var(--border);
-  border-radius: var(--raio-pequeno);
-  background: var(--bg);
-  color: inherit;
-  cursor: pointer;
-  transition: border-color 0.15s ease;
+.rodape-conteudo a {
+  color: var(--texto-3);
+  text-decoration: none;
 }
 
-select:hover:not(:disabled) {
-  border-color: var(--realce-borda);
+.rodape-conteudo a:hover {
+  color: var(--marca-texto);
+  text-decoration: underline;
 }
 
-select:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
+/* ---------------------------------------------------------- animações */
 
-/*
- * Estado das correções. Fica sempre visível porque é o que diz se o arquivo
- * baixado sairia igual ao que está na tela.
- */
-.estado {
-  font-size: 0.85rem;
-  padding: var(--e2) var(--e3);
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  line-height: 1.2;
-}
-
-.estado.pendente {
-  background: var(--amarelo);
-  border-color: var(--borda-amarela);
-  color: var(--texto-amarelo);
-  font-weight: 600;
-}
-
-.estado.salvo {
-  background: rgba(25, 135, 84, 0.12);
-  border-color: rgba(25, 135, 84, 0.4);
-  color: #146c43;
-  font-weight: 600;
-}
-
-@media (prefers-color-scheme: dark) {
-  .estado.salvo {
-    color: #75c99b;
+@keyframes surgir {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
   }
 }
 
-/* ------------------------------------------------------------ celular */
+@keyframes girar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes correr {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(250%);
+  }
+}
+
+/* ------------------------------------------------------------ larguras */
+
+@media (max-width: 60rem) {
+  .abertura {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2.5rem;
+  }
+
+  .abertura-texto p {
+    max-width: 40ch;
+  }
+
+  .abertura .cartao {
+    max-width: 34rem;
+  }
+}
 
 @media (max-width: 48rem) {
-  .pagina {
-    padding: var(--e5) var(--e4) var(--e6);
+  .topo-conteudo {
+    padding: 0 1rem;
   }
 
-  .formulario {
-    padding: var(--e4);
-    gap: var(--e4);
+  .some-no-celular {
+    display: none;
   }
 
-  /* Botão de largura cheia: em tela estreita, dois botões lado a lado ficam
-     pequenos demais pra acertar com o dedo. */
-  .acoes button,
-  .barra-acoes > button {
-    flex: 1 1 100%;
+  .conteudo {
+    padding: 2rem 1rem 3rem;
   }
 
-  .grupo-download {
+  .amplo .conteudo {
+    padding: 1.25rem 1rem 2rem;
+  }
+
+  .cartao {
+    padding: 1.15rem;
+  }
+
+  .explica {
+    margin-top: 4rem;
+    padding-top: 2.5rem;
+  }
+
+  /* Alvo de dedo: tudo que se toca chega aos 44px. */
+  .botao,
+  .botao.pequeno {
+    min-height: var(--alvo);
+  }
+
+  .botao.icone-so {
+    width: var(--alvo);
+  }
+
+  .revisao-acoes {
     width: 100%;
   }
 
-  .grupo-download button {
+  .revisao-acoes .botao {
     flex: 1;
   }
 
-  .grupo-download select {
+  .formatos {
+    order: -1;
+    flex: 1 1 100%;
+  }
+
+  .estado {
+    order: 1;
+    flex-basis: 100%;
+  }
+
+  .estado:empty {
+    display: none;
+  }
+
+  .formatos label {
     flex: 1;
+    justify-content: center;
+    min-height: calc(var(--alvo) - 8px);
   }
 
   /*
@@ -788,22 +1207,11 @@ select:disabled {
   .tabela input {
     min-height: var(--alvo);
     font-size: 0.85rem;
-    /*
-     * Coluna mais estreita em tela pequena. Com as duas colunas presas (a
-     * Data à esquerda, o Aviso à direita) comendo a largura, 6.5rem por
-     * coluna deixava menos de uma coluna de dado à vista entre as duas.
-     * 5.5rem ainda comporta "3.059,94" sem cortar.
-     */
-    min-width: 5.5rem;
   }
+}
 
-  .tabela th {
-    padding: var(--e2) var(--e3);
-  }
-
-  .rolagem {
-    /* Tela baixa: a tabela ocupa uma altura proporcional à janela em vez de
-       um valor fixo que empurraria o resto pra fora da vista. */
-    max-height: 60vh;
+@media (max-width: 26rem) {
+  .tipos-opcoes {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

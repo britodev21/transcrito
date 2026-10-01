@@ -233,6 +233,14 @@ A alternativa era desabilitar o download até salvar, mas isso deixa a pessoa tr
  
 O download vai por blob em vez de navegação: navegar para a URL funcionaria, porque o backend manda o `Content-Disposition`, mas um erro do backend substituiria a página por um JSON numa aba.
  
+**Exemplos no próprio site**
+ 
+Dois PDFs de exemplo (o `time-card-01` e o `payroll-02`) ficam em `frontend/public/exemplos`, e um botão carrega cada um no formulário. Quem chega pelo portfólio quase nunca tem um cartão de ponto à mão, e sem isso a única coisa que dá para ver é o formulário. A página inicial também mostra um trecho real da tabela, montado pelo mesmo `regrasTabela.js` da revisão: os destaques da amostra não são desenhados à mão.
+ 
+**Tema escuro**
+ 
+Segue o `prefers-color-scheme`. O cabeçalho da tabela continua no verde da planilha nos dois temas. As faixas de aviso não ficam literais no escuro, porque um `#FFF3CD` sobre fundo quase preto ofusca e apaga o texto da linha: viram o mesmo matiz misturado ao fundo. E ficam opacas, porque as colunas presas da tabela herdam a cor da linha e passam por cima das outras ao rolar.
+ 
 **Proxy em vez de CORS**
  
 O Vite encaminha `/api` e `/healthz` para o backend em desenvolvimento. Assim as chamadas são relativas e continuam funcionando quando o React é buildado e servido pelo próprio FastAPI.

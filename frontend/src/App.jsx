@@ -1,20 +1,19 @@
-import { useEffect, useRef, useState } from 'react'
-import Documento from './Documento'
-import Tabela from './Tabela'
+import { useEffect, useState } from 'react'
+import { ArrowCounterClockwise, GithubLogo } from '@phosphor-icons/react'
+import Amostra from './Amostra'
+import Envio from './Envio'
+import { Falha, Progresso } from './Progresso'
+import Revisao from './Revisao'
+import { rotuloDoTipo } from './tipos'
 import './App.css'
 
-const TIPOS = [
-  { valor: 'cartao-ponto', rotulo: 'Cartão de ponto' },
-  { valor: 'holerite', rotulo: 'Holerite' },
-]
-
 const INTERVALO_POLLING = 2000
-
-const FORMATOS = ['xlsx', 'csv', 'json']
 
 // Mesmo teto do backend (LIMITE_UPLOAD_MB no main.py). Conferir aqui poupa
 // mandar o arquivo inteiro pela rede só pra ouvir um 413.
 const LIMITE_UPLOAD_MB = 20
+
+const REPOSITORIO = 'https://github.com/britodev21/transcrito'
 
 /*
  * Tira o nome do arquivo do Content-Disposition que o backend manda, pra o
@@ -41,7 +40,6 @@ function App() {
   const [formato, setFormato] = useState('xlsx')
   const [erroAcao, setErroAcao] = useState(null)
 
-  const campoArquivo = useRef(null)
 
   const status = transcricao?.status ?? null
   const processando = Boolean(id) && status !== 'concluido' && status !== 'erro'
@@ -108,9 +106,8 @@ function App() {
     return () => clearInterval(relogio)
   }, [processando])
 
-  async function enviar(evento) {
-    evento.preventDefault()
-
+  // O submit do formulário fica no Envio, que já faz o preventDefault.
+  async function enviar() {
     if (!arquivo || enviando) return
 
     setEnviando(true)
@@ -254,173 +251,144 @@ function App() {
     setValueSalvo(null)
     setSalvou(false)
     setErroAcao(null)
-
-    // O input de arquivo é não-controlado: limpar o estado não limpa o campo.
-    if (campoArquivo.current) campoArquivo.current.value = ''
   }
 
+  const revisando = status === 'concluido'
+  const rotuloTipo = rotuloDoTipo(transcricao?.tipo ?? tipo)
+
   /*
-   * A página é estreita pro formulário ficar legível, e larga quando o
-   * resultado chega: tabela e PDF lado a lado precisam do espaço, e mantê-la
-   * estreita espremeria os dois em colunas onde nenhum se lê.
+   * O cartão da direita troca de papel conforme a etapa: escolher o arquivo,
+   * acompanhar o processamento ou mostrar a falha. A página em volta fica
+   * parada, então a pessoa não perde o lugar entre um estado e outro.
    */
-  const larguraDaPagina = status === 'concluido' ? 'pagina ampla' : 'pagina'
+  let cartao
+  if (status === 'erro') {
+    cartao = (
+      <Falha
+        arquivo={arquivo}
+        rotuloTipo={rotuloTipo}
+        mensagem={transcricao.erro}
+        aoRecomecar={recomecar}
+      />
+    )
+  } else if (processando) {
+    cartao = <Progresso arquivo={arquivo} rotuloTipo={rotuloTipo} segundos={segundos} />
+  } else {
+    cartao = (
+      <Envio
+        arquivo={arquivo}
+        tipo={tipo}
+        enviando={enviando}
+        limiteMb={LIMITE_UPLOAD_MB}
+        erro={erro}
+        aoEscolherArquivo={(novo) => {
+          setArquivo(novo)
+          setErro(null)
+        }}
+        aoEscolherTipo={setTipo}
+        aoEnviar={enviar}
+      />
+    )
+  }
 
   return (
-    <main className={larguraDaPagina}>
-      <header className="cabecalho">
-        <h1>Transcrito</h1>
-        <p>Envie um cartão de ponto ou holerite em PDF, revise a transcrição e baixe a planilha.</p>
+    <div className={revisando ? 'app amplo' : 'app'}>
+      <header className="topo">
+        <div className="topo-conteudo">
+          <a className="marca" href="/">
+            <img src="/favicon.svg" alt="" width="28" height="28" />
+            Transcrito
+          </a>
+
+          <nav className="topo-acoes" aria-label="Atalhos">
+            {revisando && (
+              <button type="button" className="botao fantasma" onClick={recomecar}>
+                <ArrowCounterClockwise size={18} aria-hidden="true" />
+                Novo envio
+              </button>
+            )}
+            <a
+              className="botao fantasma"
+              href={REPOSITORIO}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Código no GitHub"
+            >
+              <GithubLogo size={18} aria-hidden="true" />
+              <span className="some-no-celular">Código</span>
+            </a>
+          </nav>
+        </div>
       </header>
 
-      <form className="formulario" onSubmit={enviar}>
-        <div className="campo">
-          <label htmlFor="arquivo">Arquivo PDF (até {LIMITE_UPLOAD_MB} MB)</label>
-          <input
-            id="arquivo"
-            name="arquivo"
-            type="file"
-            accept="application/pdf,.pdf"
-            ref={campoArquivo}
-            disabled={enviando || processando}
-            onChange={(evento) => setArquivo(evento.target.files?.[0] ?? null)}
+      <main className="conteudo">
+        {revisando ? (
+          <Revisao
+            id={id}
+            nomeArquivo={arquivo?.name ?? 'Transcrição'}
+            rotuloTipo={rotuloTipo}
+            tipo={transcricao.tipo}
+            value={transcricao.value}
+            pendente={pendente}
+            salvou={salvou}
+            salvando={salvando}
+            baixando={baixando}
+            formato={formato}
+            erroAcao={erroAcao}
+            aoEditar={editarValue}
+            aoSalvar={salvar}
+            aoBaixar={baixar}
+            aoMudarFormato={setFormato}
           />
+        ) : (
+          <>
+            <section className="abertura">
+              <div className="abertura-texto">
+                <h1>Do PDF à planilha, conferido linha a linha.</h1>
+                <p>
+                  Envie um cartão de ponto ou holerite. Revise o que ficou marcado e
+                  baixe em xlsx, csv ou json.
+                </p>
+              </div>
+
+              {cartao}
+            </section>
+
+            <section className="explica" aria-labelledby="titulo-explica">
+              <div className="explica-texto">
+                <h2 id="titulo-explica">Você confere só o que foi marcado.</h2>
+                <p>
+                  <span className="marca-amarela">Amarelo</span> pede uma olhada: batida
+                  ímpar, leitura incerta do OCR ou página sem verbas.{' '}
+                  <span className="marca-vermelha">Vermelho</span> aponta data ou
+                  competência fora de sequência. As mesmas cores saem no xlsx.
+                </p>
+              </div>
+
+              <figure className="explica-amostra">
+                <Amostra />
+                <figcaption>
+                  Trecho do cartão de ponto de exemplo, sem o dia 31/10 para mostrar o
+                  aviso de sequência.
+                </figcaption>
+              </figure>
+            </section>
+          </>
+        )}
+      </main>
+
+      <footer className="rodape">
+        <div className="rodape-conteudo">
+          <span>Transcrito</span>
+          <a href={REPOSITORIO} target="_blank" rel="noreferrer">
+            Código no GitHub
+          </a>
+          <a href="https://github.com/britodev21" target="_blank" rel="noreferrer">
+            Desenvolvido por britodev21
+          </a>
         </div>
-
-        <fieldset className="campo" disabled={enviando || processando}>
-          <legend>Tipo de documento</legend>
-
-          {TIPOS.map(({ valor, rotulo }) => (
-            <label key={valor} className="opcao">
-              <input
-                type="radio"
-                name="tipo"
-                value={valor}
-                checked={tipo === valor}
-                onChange={(evento) => setTipo(evento.target.value)}
-              />
-              {rotulo}
-            </label>
-          ))}
-        </fieldset>
-
-        <div className="acoes">
-          <button type="submit" disabled={!arquivo || enviando || processando}>
-            {enviando ? 'Enviando…' : 'Transcrever'}
-          </button>
-
-          {(transcricao || erro) && (
-            <button type="button" className="secundario" onClick={recomecar}>
-              Novo envio
-            </button>
-          )}
-        </div>
-      </form>
-
-      {processando && (
-        <div className="aviso processando" role="status" aria-live="polite">
-          <span className="girando" aria-hidden="true" />
-          <div>
-            <strong>Processando o documento…</strong>
-            <p className="detalhe">
-              Consultando a cada 2 s · {segundos}s decorridos
-            </p>
-          </div>
-        </div>
-      )}
-
-      {erro && (
-        <div className="aviso falha" role="alert">
-          <strong>Não deu certo</strong>
-          <p className="detalhe">{erro}</p>
-        </div>
-      )}
-
-      {status === 'erro' && (
-        <div className="aviso falha" role="alert">
-          <strong>A transcrição falhou</strong>
-          <p className="detalhe">{transcricao.erro}</p>
-        </div>
-      )}
-
-      {status === 'concluido' && (
-        <section className="resultado">
-          <h2>Resultado</h2>
-          <p className="detalhe">
-            {transcricao.tipo} · {transcricao.value.pages.length} páginas ·
-            edite qualquer célula para corrigir
-          </p>
-
-          {/*
-            Tabela e documento lado a lado: conferir uma transcrição é
-            comparar as duas coisas, e separá-las em telas diferentes
-            obrigaria a decorar o que estava na outra.
-          */}
-          <div className="painel">
-            <Tabela
-              tipo={transcricao.tipo}
-              value={transcricao.value}
-              aoEditar={editarValue}
-            />
-
-            <Documento id={id} />
-          </div>
-
-          <div className="barra-acoes">
-            <button type="button" onClick={salvar} disabled={!pendente || salvando}>
-              {salvando ? 'Salvando…' : 'Salvar correções'}
-            </button>
-
-            <div className="grupo-download">
-              <label className="rotulo-formato" htmlFor="formato">
-                Formato
-              </label>
-              <select
-                id="formato"
-                value={formato}
-                disabled={salvando || baixando}
-                onChange={(evento) => setFormato(evento.target.value)}
-              >
-                {FORMATOS.map((opcao) => (
-                  <option key={opcao} value={opcao}>
-                    {opcao}
-                  </option>
-                ))}
-              </select>
-
-              <button
-                type="button"
-                className="secundario"
-                onClick={baixar}
-                disabled={salvando || baixando}
-              >
-                {baixando ? 'Baixando…' : 'Baixar'}
-              </button>
-            </div>
-
-            {/*
-              O estado das correções fica sempre visível: pendente avisa que o
-              arquivo sairia diferente da tela, e o salvo confirma o PUT. O
-              "salvo" some sozinho na próxima edição, porque volta a pendente.
-            */}
-            {pendente ? (
-              <span className="estado pendente">
-                Alterações não salvas · o download salva antes
-              </span>
-            ) : (
-              salvou && <span className="estado salvo">Correções salvas</span>
-            )}
-          </div>
-
-          {erroAcao && (
-            <div className="aviso falha" role="alert">
-              <strong>Não deu certo</strong>
-              <p className="detalhe">{erroAcao}</p>
-            </div>
-          )}
-        </section>
-      )}
-    </main>
+      </footer>
+    </div>
   )
 }
 
